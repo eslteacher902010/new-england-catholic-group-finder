@@ -1,0 +1,283 @@
+#mainCarousel {
+  position: relative;
+}
+
+.carousel-inner {
+  min-height: 700px; /* Ensures consistent height across all slides */
+}
+
+.carousel-item {
+  min-height: 700px;
+  position: relative;
+}
+
+.carousel-item img {
+  height: 700px;
+  width: 100%;
+  object-fit: cover; /* Keeps image ratio but fills space consistently */
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  width: 5%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.carousel-control-prev {
+  left: 15px;
+}
+
+.carousel-control-next {
+  right: 15px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.5);
+  background-size: 100% 100%;
+  border-radius: 50%;
+}
+
+.carousel-overlay {
+  position: absolute;
+  top: 30%;
+  left: 10%;
+  z-index: 10;
+}
+
+.group-card,
+.add-group {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 1.5rem 2rem;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 100%;
+}
+
+.group-card h2,
+.add-group h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.group-card p,
+.add-group p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.group-card .btn,
+.add-group .btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 10px;
+}
+
+/* Optional: Adjust this if you ever want to shift caption overlays vertically */
+.custom-caption-up {
+  bottom: 40% !important;
+}
+
+/* Terms section styles */
+.terms {
+  font-family: Arial, sans-serif;
+  margin: 40px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.terms h2 {
+  text-align: center;
+  color: #333;
+}
+
+.terms ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.terms ul ul {
+  list-style-type: circle;
+  padding-left: 20px;
+}
+
+/* Text block inside carousel */
+.carousel-block-around-text {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  display: inline-block;
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+.carousel-block-around-text h5,
+.carousel-block-around-text p {
+  color: #fff;
+  margin: 0;
+}
+
+/* Success box on other pages */
+.success-box {
+  background-color: #ffffff;
+  border: 2px solid #4CAF50;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  color: #4CAF50;
+}
+
+.home-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.home-button:hover {
+  background-color: #45a049;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.carousel,
+.carousel-inner,
+.carousel-item,
+.carousel-item img {
+  width: 100%;
+  max-width: 100%;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+  gap: 10px;
+}
+
+/* Blank planning calendar */
+.blank-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  max-width: 900px;
+  margin: 2rem auto;
+  border: 1px solid #ccc;
+  font-family: sans-serif;
+  font-size: 1rem;
+  text-align: center;
+  background-color: white;
+}
+
+.day-name,
+.blank-calendar > div {
+  border: 1px solid #ccc;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.day-name {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .carousel-overlay {
+    top: 10%;
+    left: 5%;
+  }
+
+  .group-card,
+  .add-group {
+    padding: 1rem;
+  }
+
+  .blank-calendar {
+    font-size: 0.85rem;
+  }
+}
+
+.carousel-control-prev-icon:hover,
+.carousel-control-next-icon:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.fc-tooltip {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  position: absolute;
+  z-index: 1000;
+  display: none;
+  width: 250px;
+  font-size: 0.875rem;
+}
+.fc-tooltip a {
+  display: inline-block;
+  margin-top: 8px;
+  text-decoration: none;
+  color: #007bff;
+}
+
+
+/*calendar*/
+
+.fc-tooltip {
+  position: absolute;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-size: 0.9rem;
+  z-index: 1000;
+  display: none;
+}
+
+
+.starter-button {
+  margin-top: -.5rem;         /* adds spacing above */
+  padding: 12px 28px;       /* optional: custom button size */
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.starter-button:hover {
+  transform: scale(1.05);
+  background-color: #e2e6ea;
+}
+

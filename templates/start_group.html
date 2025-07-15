@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Start a Catholic Young Adult Group</h1>
+
+<p class="text-muted">
+  Starting a group might feel daunting — but it doesn’t have to be. Whether you're hoping to bring young adults together
+  for prayer, service, study, or social connection, your idea can be the spark that brings faith to life in your local
+  community.
+</p>
+
+<p class="text-muted">
+  This form is a starting point. Share as much or as little as you’ve thought through. Once submitted, we’ll be in touch
+  to support you in shaping your vision and connecting with others. You don’t need to have all the answers — just a desire
+  to lead with purpose.
+</p>
+
+<form method="POST" action="{{ url_for('start_group') }}" style="border:1px solid #ccc; padding: 20px; border-radius: 8px;">
+  {{ form.hidden_tag() }}
+
+  <!-- Group Name -->
+  {{ form.name.label }}<br>
+  {{ form.name(class="form-control") }}<br>
+
+  {{ form.city.label }}<br>
+  {{ form.city(class="form-control") }}<br>
+
+  {{ form.State.label }}<br>
+  {{ form.State(class="form-control") }}<br>
+
+
+
+  <!-- ZIP Code -->
+  {{ form.zip_code.label }}<br>
+  {{ form.zip_code(class="form-control") }}<br>
+
+
+
+  <!-- Approximate Age Range -->
+  {{ form.approximate_age_range.label }}<br>
+  {{ form.approximate_age_range(class="form-select") }}<br>
+
+  <!-- Group Type -->
+  {{ form.group_type.label }}<br>
+  {{ form.group_type(class="form-select") }}<br>
+
+  <!-- The Vision -->
+  {{ form.the_why.label }}<br>
+  {{ form.the_why(class="form-control") }}
+  <small class="form-text text-muted">
+    What’s the heart of your group? What kind of community are you hoping to build?
+  </small>
+  <br>
+
+  <!-- Contact Info -->
+  {{ form.contact.label }}<br>
+  {{ form.contact(class="form-control") }}
+  <small class="form-text text-muted">
+    Optional: Email, social media handle, or phone number so we can follow up.
+  </small>
+  <br>
+
+  <!-- Submit -->
+  <br>
+  {{ form.submit(class="btn btn-primary") }}
+</form>
+
+{% endblock %}

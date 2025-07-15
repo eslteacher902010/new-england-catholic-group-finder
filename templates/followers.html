@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+
+<p>Followers: {{ group.followers|length }}</p>
+<ul>
+  {% for follower in group.followers %}
+    <li>{{ follower.email }}</li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

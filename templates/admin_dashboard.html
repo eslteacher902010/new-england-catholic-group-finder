@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>👮 Admin Dashboard</h2>
+
+  <!-- === Pending Groups === -->
+  <hr>
+  <h4>🕵️ Pending Groups ({{ groups|length }})</h4>
+  <ul class="list-group mb-4">
+    {% for group in groups %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ group.name }} ({{ group.city }}, {{ group.state }})
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('preview_group', group_id=group.id) }}" class="btn btn-sm btn-outline-secondary">Preview</a>
+
+          <form method="POST" action="{{ url_for('approve_group', group_id=group.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-success">Approve</button>
+          </form>
+
+          <form method="POST" action="{{ url_for('reject_group', group_id=group.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="reason" value="Missing Info">
+            <button class="btn btn-sm btn-danger">Reject</button>
+          </form>
+
+          <a href="{{ url_for('edit_group', group_id=group.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+
+          <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}" class="d-inline" onsubmit="return confirm('Delete this group?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </div>
+      </li>
+    {% else %}
+      <li class="list-group-item text-muted">No pending groups.</li>
+    {% endfor %}
+  </ul>
+
+  <!-- === Pending Events === -->
+  <h4>📅 Pending Events ({{ events|length }})</h4>
+  <ul class="list-group">
+    {% for event in events %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ event.title }} — {{ event.date_time.strftime('%b %d, %Y %I:%M %p') }}
+        <div class="d-flex gap-2 flex-wrap">
+          <form method="POST" action="{{ url_for('approve_event', event_id=event.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-success">Approve</button>
+          </form>
+
+          <form method="POST" action="{{ url_for('reject_event', event_id=event.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="reason" value="Incomplete details">
+            <button class="btn btn-sm btn-danger">Reject</button>
+          </form>
+
+          <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+
+          <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}" class="d-inline" onsubmit="return confirm('Delete this event?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </div>
+      </li>
+    {% else %}
+      <li class="list-group-item text-muted">No pending events.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>New England Region Map</h2>
+<div id="map" style="height: 600px;"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map('map').setView([43.0, -71.7], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Show New England state outlines
+  fetch('{{ url_for("static", filename="data/new_england_states.geojson") }}')
+    .then(res => res.json())
+    .then(data => {
+      const colors = ['#FF9999', '#99CCFF', '#66FF66', '#FFCC66', '#CC99FF', '#FF66CC'];
+
+      L.geoJSON(data, {
+        style: function (feature) {
+          const index = Math.floor(Math.random() * colors.length);
+          return {
+            color: '#333',
+            weight: 1.5,
+            fillColor: colors[index],
+            fillOpacity: 0.4
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          const name = feature.properties.NAME || feature.properties.name;
+          layer.bindPopup(name);
+        }
+      }).addTo(map);
+    });
+
+  // Show Catholic groups with markers
+  fetch("/data/groups.json")
+    .then(res => res.json())
+    .then(groups => {
+      groups.forEach(group => {
+        const marker = L.marker([group.lat, group.lon]).addTo(map);
+        marker.bindPopup(`
+          <strong>${group.name}</strong><br>
+          ${group.description || ""}<br>
+          <em>${group.city}, ${group.state}</em><br>
+          ${group.website ? `<a href="${group.website}" target="_blank">Website</a><br>` : ""}
+          ${group.social || ""}
+        `);
+
+        marker.on("mouseover", () => marker.openPopup());
+        marker.on("mouseout", () => marker.closePopup());
+      });
+    });
+</script>
+{% endblock %}

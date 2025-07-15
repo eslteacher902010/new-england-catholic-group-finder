@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Edit Group</h2>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.city.label(class="form-label") }}
+      {{ form.city(class="form-control") }}
+    </div>
+
+    <!-- Add more fields as needed -->
+
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

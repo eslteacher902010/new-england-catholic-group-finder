@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="alert alert-info">
+    This is a preview. Your group is pending approval and not yet visible to the public.
+  </div>
+
+  <div class="card mb-4">
+    <img src="{{ group.img_url or url_for('static', filename='images/default-group.jpg') }}"
+         class="card-img-top"
+         alt="{{ group.name }} image">
+    <div class="card-body">
+      <h3 class="card-title">{{ group.name }}</h3>
+      <p class="card-text">{{ group.city }}, {{ group.state }}</p>
+
+      {% if group.website_address %}
+        <a href="{{ group.website_address }}" class="btn btn-outline-secondary" target="_blank" rel="noopener noreferrer">Website</a>
+      {% endif %}
+
+      {% if group.map_url %}
+        <a href="{{ group.map_url }}" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">Map</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

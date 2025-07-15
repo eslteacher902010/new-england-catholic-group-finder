@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="POST" action="{{ url_for('sign_up') }}" style="border:1px solid #ccc; padding: 20px;">
+  {{ form.hidden_tag() }}
+
+  <div class="container">
+    <h1>Sign Up</h1>
+    <p>Please fill in this form to create an account.</p>
+    <hr>
+
+    <label>{{ form.name.label }}</label>
+    {{ form.name(class="form-control", placeholder="Enter your name") }}
+
+    <label>{{ form.email.label }}</label>
+    {{ form.email(class="form-control", placeholder="Enter your email") }}
+
+    <label>{{ form.password.label }}</label>
+    {{ form.password(class="form-control", placeholder="Enter your password") }}
+
+    <br>
+
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="termsCheck" required>
+      <label class="form-check-label" for="termsCheck">
+        I agree to the <a href="/terms" target="_blank">Terms and Conditions</a>
+      </label>
+    </div>
+
+    <div class="form-check mt-2">
+  {{ form.subscribe(class="form-check-input", id="subscribe") }}
+  <label class="form-check-label" for="subscribe">
+    Subscribe to updates about Catholic young adult groups and events in New England
+  </label>
+</div>
+
+
+
+    <br>
+    {{ form.submit(class="btn btn-success") }}
+  </div>
+</form>
+
+{% endblock %}

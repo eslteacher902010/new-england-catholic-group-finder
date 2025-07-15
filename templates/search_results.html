@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">
+    {% if zip_code %}
+      🔍 Catholic Groups Near ZIP: {{ zip_code }}
+    {% else %}
+      🔍 Find Catholic Groups by ZIP Code
+    {% endif %}
+  </h2>
+
+  <form method="GET" action="{{ url_for('search_zip') }}" class="input-group mb-4">
+    <input type="text" name="zip" class="form-control" placeholder="Enter ZIP code" value="{{ zip_code or '' }}">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+
+  {% if zip_code %}
+    {% if groups %}
+      <ul class="list-group">
+        {% for group in groups %}
+          <li class="list-group-item">
+            <h5>{{ group.name }}</h5>
+            {% if group.description %}
+              <p>{{ group.description }}</p>
+            {% endif %}
+            <p><strong>Location:</strong> {{ group.city }}, {{ group.state }} {{ group.zip_code }}</p>
+            {% if group.map_url %}
+              <a href="{{ group.map_url }}" class="btn btn-sm btn-outline-secondary" target="_blank">📍 View on Map</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-warning">No groups found in that ZIP code. Try another nearby.</div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

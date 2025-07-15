@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>{{ group.name }}</h2>
+  <p><strong>Location:</strong> {{ group.city }}, {{ group.state }}</p>
+  <p><strong>Age Range:</strong> {{ group.approximate_age_range }}</p>
+  <p><strong>Group Details:</strong> {{ group.group_details }}</p>
+  <p><strong>Contact:</strong> {{ group.contact }}</p>
+  {% if group.map_url %}
+  <a href="{{ group.map_url }}" target="_blank" class="btn btn-outline-primary me-2">View Map</a>
+{% endif %}
+{% if group.website_address %}
+  <a href="{{ group.website_address }}" target="_blank" class="btn btn-outline-secondary">Visit Website</a>
+{% endif %}
+
+  {% if group.img_url %}
+    <img src="{{ group.img_url }}" class="img-fluid" alt="Group Image">
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
+  <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+
+  {% if group.geocode_warning %}
+  <p class="text-warning">{{ group.geocode_warning }}</p>
+  {% endif %}
+
+
+
+{% endblock %}

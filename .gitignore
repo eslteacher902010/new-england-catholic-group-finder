@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# SQLite database
+*.db
+instance/
+
+# Flask-related
+*.log
+*.pot
+*.mo
+
+# Migrations cache
+migrations/__pycache__/
+
+# VS Code and PyCharm files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variable files
+.env

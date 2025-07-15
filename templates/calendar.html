@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-center">Catholic Groups & Events Calendar</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+<!-- Trigger Button -->
+<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#eventModal">
+  ➕ Add Event
+</button>
+
+<!-- FullCalendar Container -->
+<div id="calendar"></div>
+
+<!-- Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="eventForm" method="POST" class="modal-content">
+      {{ form.hidden_tag() }}
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="eventModalLabel">Submit a New Event</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        {{ form.title.label }} {{ form.title(class="form-control") }}
+        {{ form.description.label }} {{ form.description(class="form-control") }}
+        {{ form.date.label }} {{ form.date(class="form-control") }}
+        {{ form.time.label }} {{ form.time(class="form-control") }}
+        {{ form.location.label }} {{ form.location(class="form-control") }}
+        {{ form.link.label }} {{ form.link(class="form-control") }}
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Submit</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Fetch and render calendar events
+  fetch("/data/events.json")
+    .then(res => res.json())
+    .then(events => {
+      const calendarEvents = events.map(event => ({
+        title: event.title + (event.city ? ` - ${event.city}` : ""),
+        start: new Date(event.date_time),
+        url: event.link,
+        color: event.title.includes("YCP") ? '#007bff' : '#28a745',
+        extendedProps: {
+          description: event.description,
+          location: event.location,
+          ics_url: event.ics_url
+        }
+      }));
+
+      const calendarEl = document.getElementById("calendar");
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,listWeek"
+        },
+        events: calendarEvents,
+        eventClick: function(info) {
+          info.jsEvent.preventDefault();
+          if (info.event.url) {
+            window.open(info.event.url, '_blank');
+          }
+        },
+        eventDidMount: function(info) {
+          const { description, location, ics_url } = info.event.extendedProps;
+
+          const tooltip = document.createElement("div");
+          tooltip.classList.add("fc-tooltip");
+          tooltip.innerHTML = `
+            <strong>${info.event.title}</strong><br>
+            ${description ? `<div>${description}</div>` : ""}
+            ${location ? `<div><em>${location}</em></div>` : ""}
+            ${ics_url ? `<a href="${ics_url}" target="_blank">➕ Add to Calendar</a>` : ""}
+          `;
+
+
+            // ✅ Only show signup button if it's an internal event
+            if (is_internal) {
+              content += `
+                <form action="/signup_event/${info.event.id}" method="POST">
+                  <button type="submit" class="btn btn-sm btn-primary mt-2">✝️ Sign Up</button>
+                </form>
+              `;
+            }
+
+          document.body.appendChild(tooltip);
+
+          info.el.addEventListener("mouseenter", e => {
+            tooltip.style.display = "block";
+            tooltip.style.left = e.pageX + 10 + "px";
+            tooltip.style.top = e.pageY + 10 + "px";
+          });
+
+          info.el.addEventListener("mousemove", e => {
+            tooltip.style.left = e.pageX + 10 + "px";
+            tooltip.style.top = e.pageY + 10 + "px";
+          });
+
+          info.el.addEventListener("mouseleave", () => {
+            tooltip.style.display = "none";
+            document.body.removeChild(tooltip);
+          });
+        }
+      });
+
+      calendar.render();
+    });
+
+  // Handle event form submission via AJAX
+  document.getElementById("eventForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch("{{ url_for('submit_event') }}", {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("✅ Event submitted for approval.");
+        const modal = bootstrap.Modal.getInstance(document.getElementById("eventModal"));
+        modal.hide();
+        this.reset();
+      } else {
+        alert("❌ There was an error. Please try again.");
+      }
+    })
+    .catch(() => alert("❌ Submission failed. Please try again."));
+  });
+});
+</script>
+
+<style>
+.fc-tooltip {
+  position: absolute;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-size: 0.9rem;
+  z-index: 1000;
+  display: none;
+}
+</style>
+
+{% endblock %}

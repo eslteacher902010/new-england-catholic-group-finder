@@ -1,0 +1,29 @@
+{% for group in groups %}
+  <div class="card my-3 p-3">
+    <h3>{{ group.name }}</h3>
+    <p>{{ group.city }}, {{ group.state }}</p>
+
+    {% if group.website_address %}
+      <a href="{{ group.website_address }}" target="_blank" class="btn btn-outline-secondary btn-sm mb-2">Visit Website</a>
+    {% endif %}
+
+    <!-- Approve Form -->
+    <form method="POST" action="{{ url_for('approve_group', group_id=group.id) }}" class="d-inline">
+      {{ csrf_token() }}
+      <button type="submit" class="btn btn-success btn-sm">Approve</button>
+    </form>
+
+    <!-- Reject Form with dropdown -->
+    <form method="POST" action="{{ url_for('reject_group', group_id=group.id) }}" class="d-inline ms-2">
+      {{ csrf_token() }}
+      <select name="reason" class="form-select form-select-sm d-inline" style="width: 200px;">
+        <option value="">Select reason</option>
+        <option value="Incomplete submission">Incomplete submission</option>
+        <option value="Not enough detail">Not enough detail</option>
+        <option value="Duplicate group">Duplicate group</option>
+        <option value="Does not align with mission">Does not align with mission</option>
+      </select>
+      <button type="submit" class="btn btn-danger btn-sm mt-1">Reject</button>
+    </form>
+  </div>
+{% endfor %}

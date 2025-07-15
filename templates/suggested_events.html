@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Pending Event Submissions</h1>
+
+{% for event in events %}
+  <div class="card my-3 p-3">
+    <h5>{{ event.title }}</h5>
+    <p><strong>Date & Time:</strong> {{ event.date_time }}</p>
+    <p><strong>Description:</strong> {{ event.description or "No description." }}</p>
+    <p><strong>Location:</strong> {{ event.location or "N/A" }}</p>
+    <p><strong>Link:</strong> <a href="{{ event.link }}">{{ event.link }}</a></p>
+
+    <form method="POST" action="{{ url_for('approve_event', event_id=event.id) }}" style="display: inline;">
+      <button class="btn btn-success btn-sm">Approve</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('reject_event', event_id=event.id) }}" style="display: inline;">
+      <input type="text" name="reason" placeholder="Reason (optional)">
+      <button class="btn btn-danger btn-sm">Reject</button>
+    </form>
+  </div>
+{% endfor %}
+
+{% endblock %}
