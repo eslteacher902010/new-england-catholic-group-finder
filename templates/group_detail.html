@@ -16,13 +16,37 @@
     <img src="{{ group.img_url }}" class="img-fluid" alt="Group Image">
   {% endif %}
 
-  <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
-  <button type="submit" class="btn btn-danger">Delete</button>
-  </form>
+
+
+{% if group.events %}
+  <h3>Upcoming Events:</h3>
+  <ul>
+    {% for event in group.events %}
+     <li>
+  <strong><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></strong>
+  on {{ event.date_time.strftime('%b %d, %Y') }}
+</li>
+
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No events yet.</p>
+{% endif %}
+
+
+
 
   {% if group.geocode_warning %}
   <p class="text-warning">{{ group.geocode_warning }}</p>
   {% endif %}
+
+ <a href="{{ url_for('show_groups') }}" class="btn btn-link mt-3">← Back to all groups</a>
+
+{% if current_user.is_authenticated and current_user.is_admin %}
+  <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+{% endif %}
 
 
 

@@ -38,7 +38,7 @@ geocoder = OpenCageGeocode(os.getenv("API_KEY"))
 # Initialize Flask
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///catholic_groups.db'
-app.config['SECRET_KEY'] = 'SECRET'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "dev")
 
 csrf = CSRFProtect(app)
 
@@ -101,6 +101,8 @@ class Catholic(db.Model):
     rejection_reason: Mapped[str] = mapped_column(String(500), nullable=True)
     zip_code: Mapped[Optional[str]] = mapped_column(db.String(10), nullable=False)
     subscribed: Mapped[bool] = mapped_column(Boolean, default=False)
+    events = db.relationship("Event", back_populates="group", cascade="all, delete")
+
 
     # ✅ Store the approval status in the DB
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
@@ -137,6 +139,8 @@ class Event(db.Model):
     zipcode: Mapped[str] = mapped_column(String(200), nullable=True)
     link: Mapped[str] = mapped_column(String(300), nullable=True)
     status = db.Column(db.String(20), default="pending")
+    group_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("catholic.id"), nullable=True)
+    group = db.relationship("Catholic", back_populates="events")
 
     # ✅ Foreign key to User table
     user_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"), nullable=False)
@@ -225,6 +229,7 @@ def submit_event():
             title=form.title.data,
             description=form.description.data,
             date_time=datetime.combine(form.date.data, form.time.data),
+            group_id=form.group.data,
             link=form.link.data,
             address=form.location.data,
             zipcode=form.location.data,
@@ -538,7 +543,7 @@ DTSTART:{start}
 DTEND:{end}
 SUMMARY:{event.title}
 DESCRIPTION:{event.description or ''}
-LOCATION:{event.location or ''}
+LOCATION:{event.address or ''}
 END:VEVENT
 END:VCALENDAR
 """
@@ -660,7 +665,10 @@ def signup_event(event_id):
         db.session.commit()
     return redirect(url_for('event_detail', event_id=event_id))
 
-
+@app.route("/event/<int:event_id>")
+def event_detail(event_id):
+    event = db.get_or_404(Event, event_id)
+    return render_template("event_detail.html", event=event)
 
 
 # ---------- RUN ----------

@@ -4,7 +4,11 @@ from wtforms import (
     TextAreaField, DateField, TimeField
 )
 from wtforms.validators import DataRequired, Email, Optional, Length
+from wtforms_sqlalchemy.fields import QuerySelectField
 
+def get_approved_groups():
+    from main import Catholic  # lazy import to avoid circular issue
+    return Catholic.query.filter_by(status="approved").all()
 
 
 
@@ -48,6 +52,14 @@ class EventForm(FlaskForm):
     link = StringField("Link to event", validators=[Optional()],
                        render_kw={"placeholder": "If possible, a link to the event"})
 
+    group = QuerySelectField(
+        'Group',
+        query_factory=get_approved_groups,
+        get_label="name",
+        allow_blank=True
+    )
+
+
     submit = SubmitField("Submit Event")
 
 
@@ -85,7 +97,7 @@ class StartGroup(FlaskForm):
 
     city = StringField("City", validators=[DataRequired()])
 
-    State = StringField("State", validators=[DataRequired()])
+    state = StringField("State", validators=[DataRequired()])
 
     zip_code = StringField("ZIP Code", validators=[Optional(), Length(max=10)])
 

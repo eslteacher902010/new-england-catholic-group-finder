@@ -1,10 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+  <h2>{{ event.title }}</h2>
+
+  <p><strong>Date & Time:</strong> {{ event.date_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</p>
+  
+  {% if event.group %}
+    <p><strong>Hosted by:</strong>
+      <a href="{{ url_for('group_detail', group_id=event.group.id) }}">
+        {{ event.group.name }}
+      </a>
+    </p>
+  {% endif %}
+
+  {% if event.description %}
+    <p><strong>Description:</strong><br>{{ event.description }}</p>
+  {% endif %}
+
+  {% if event.address %}
+    <p><strong>Location:</strong> {{ event.address }}</p>
+  {% endif %}
+
+  {% if event.link %}
+    <p><strong>More Info / External Link:</strong>
+      <a href="{{ event.link }}" target="_blank">{{ event.link }}</a>
+    </p>
+  {% endif %}
+
+  <p>
+    <a href="{{ url_for('download_ical', event_id=event.id) }}" class="btn btn-outline-primary">
+      📅 Add to Calendar
+    </a>
+  </p>
+
+  {% if event.group %}
+    {% if current_user.is_authenticated %}
+      {% if event in current_user.signed_up_events %}
+        <p class="text-success">✅ You are signed up for this event.</p>
+      {% else %}
+        <form action="{{ url_for('signup_event', event_id=event.id) }}" method="POST">
+          <button type="submit" class="btn btn-success">Sign Up</button>
+        </form>
+
+      {% endif %}
+    {% else %}
+      <p><a href="{{ url_for('login') }}">Log in</a> to sign up for this event.</p>
+    {% endif %}
+  {% else %}
+    <p class="text-muted">Sign up currently not supported.</p>
+  {% endif %}
+</div>
+{% endblock %}
