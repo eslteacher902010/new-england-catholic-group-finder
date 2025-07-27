@@ -1,16 +1,13 @@
-# fly.toml app configuration file generated for day88-catholic-young-adults-white-feather-8386 on 2025-07-14T21:35:49-04:00
+# fly.toml app configuration file generated for day88-catholic-young-adults-autumn-cherry-2277 on 2025-07-27T18:01:26-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'day88-catholic-young-adults-white-feather-8386'
+app = 'day88-catholic-young-adults-autumn-cherry-2277'
 primary_region = 'bos'
 
 [build]
-
-
-dockerfile = "./Dockerfile"
-
+  dockerfile = './Dockerfile'
 
 [http_service]
   internal_port = 8080
@@ -24,5 +21,3 @@ dockerfile = "./Dockerfile"
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-
-
