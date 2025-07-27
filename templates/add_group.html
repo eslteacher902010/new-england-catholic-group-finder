@@ -1,60 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Add a New Group</h2>
 
 <form method="POST">
+  {{ form.hidden_tag() }}
+
   <div class="mb-3">
-    <label for="name" class="form-label">Group Name</label>
-    <input type="text" class="form-control" id="name" name="name" value="{{ request.form.name }}" required>
+    {{ form.name.label(class="form-label") }}
+    {{ form.name(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="city" class="form-label">City</label>
-    <input type="text" class="form-control" id="city" name="city" value="{{ request.form.city }}">
+    {{ form.city.label(class="form-label") }}
+    {{ form.city(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="state" class="form-label">State</label>
-    <select name="state" class="form-control" required>
-      <option value="">-- Select State --</option>
-      <option value="MA" {% if request.form.state == 'MA' %}selected{% endif %}>Massachusetts</option>
-      <option value="ME" {% if request.form.state == 'ME' %}selected{% endif %}>Maine</option>
-      <option value="NH" {% if request.form.state == 'NH' %}selected{% endif %}>New Hampshire</option>
-      <option value="VT" {% if request.form.state == 'VT' %}selected{% endif %}>Vermont</option>
-      <option value="RI" {% if request.form.state == 'RI' %}selected{% endif %}>Rhode Island</option>
-      <option value="CT" {% if request.form.state == 'CT' %}selected{% endif %}>Connecticut</option>
-      <option value="NY" {% if request.form.state == 'NY' %}selected{% endif %}>New York</option>
-    </select>
+    {{ form.state.label(class="form-label") }}
+    {{ form.state(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="website_address" class="form-label">Website</label>
-    <input type="url" class="form-control" id="website_address" name="website_address" value="{{ request.form.website_address }}">
+    {{ form.website_address.label(class="form-label") }}
+    {{ form.website_address(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="social_media" class="form-label">Social Media Handle</label>
-    <input type="url" class="form-control" id="social_media" name="social_media" value="{{ request.form.social_media }}">
+    {{ form.social_media.label(class="form-label") }}
+    {{ form.social_media(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="lat" class="form-label">Latitude</label>
-    <input type="text" class="form-control" id="lat" name="lat" value="{{ request.form.lat }}">
+    {{ form.lat.label(class="form-label") }}
+    {{ form.lat(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="lon" class="form-label">Longitude</label>
-    <input type="text" class="form-control" id="lon" name="lon" value="{{ request.form.lon }}">
+    {{ form.lon.label(class="form-label") }}
+    {{ form.lon(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="img_url" class="form-label">Image URL</label>
-    <input type="url" class="form-control" id="img_url" name="img_url" value="{{ request.form.img_url }}">
+    {{ form.img_url.label(class="form-label") }}
+    {{ form.img_url(class="form-control") }}
   </div>
 
   <div class="mb-3">
-    <label for="map_url" class="form-label">Google Maps URL</label>
-    <input type="url" class="form-control" id="map_url" name="map_url" value="{{ request.form.map_url }}">
+    {{ form.map_url.label(class="form-label") }}
+    {{ form.map_url(class="form-control") }}
   </div>
 
   <button type="submit" class="btn btn-primary">Add Group</button>

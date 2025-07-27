@@ -8,6 +8,10 @@ primary_region = 'bos'
 
 [build]
 
+
+dockerfile = "./Dockerfile"
+
+
 [http_service]
   internal_port = 8080
   force_https = true
@@ -20,3 +24,5 @@ primary_region = 'bos'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+
+

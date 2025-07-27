@@ -215,7 +215,7 @@ def groups_json():
 
 @login_manager.unauthorized_handler
 def unauthorized():
-    flash("Please log in to submit an event.", "warning")
+    flash("Please log in first.", "warning")
     return redirect(url_for("login"))
 
 
@@ -360,9 +360,16 @@ def sign_up():
 
     return render_template("register.html", form=form)
 
+@app.route("/add_group", methods=["GET"])
+@login_required
+def add_group():
+    form = GroupForm()
+    return render_template("add_group.html", form=form)
+
 
 @app.route("/submit-group", methods=["POST"])
 @login_required
+@csrf.exempt
 def submit_group():
     form = GroupForm()
     if form.validate_on_submit():
@@ -407,7 +414,7 @@ def submit_group():
         flash("✅ Group submitted successfully.")
         return redirect(url_for("groups"))
 
-    return render_template("submit_group.html", form=form)
+    return render_template("add_group.html", form=form)
 
 
 
