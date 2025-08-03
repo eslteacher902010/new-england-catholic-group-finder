@@ -677,6 +677,23 @@ def event_detail(event_id):
     event = db.get_or_404(Event, event_id)
     return render_template("event_detail.html", event=event)
 
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        name = request.form.get("name")
+        email = request.form.get("email")
+        message = request.form.get("message")
+
+        # Optional: store/send the message
+        print(f"New contact message:\nFrom: {name} <{email}>\nMessage: {message}")
+
+        flash("Thanks for your message! I'll get back to you soon.")
+        return redirect(url_for("contact"))
+
+    return render_template("contact.html")
+
+
+
 
 # ---------- RUN ----------
 
