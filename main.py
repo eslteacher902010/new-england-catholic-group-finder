@@ -24,7 +24,8 @@ from dateutil.parser import parse as parse_datetime
 from opencage.geocoder import OpenCageGeocode
 from functools import wraps
 
-from forms import StartGroup, RegisterForm, EventForm, GroupForm, LoginForm
+
+from forms import StartGroup, RegisterForm, LoginForm, EventForm, GroupForm
 
 
 NEW_ENGLAND_STATES = {"MA", "ME", "NH", "VT", "RI", "CT"}
@@ -85,7 +86,7 @@ class User(db.Model, UserMixin):
 
 
 
-from datetime import datetime
+
 
 def import_events_from_csv(file_path):
     with open(file_path, newline='') as csvfile:
@@ -125,6 +126,8 @@ def admin_required(f):
     return decorated
 
 
+
+
 @app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
 @login_required
 def edit_group(group_id):
@@ -132,20 +135,16 @@ def edit_group(group_id):
         abort(403)
 
     group = Catholic.query.get_or_404(group_id)
+    form = GroupForm(obj=group)  # Pre-fill form with group data
 
-    if request.method == "POST":
-        group.name = request.form["name"]
-        group.city = request.form["city"]
-        group.state = request.form["state"]
-        group.group_details = request.form["group_details"]
-        group.website_address = request.form["website_address"]
-        group.social_media = request.form["social_media"]
-        group.map_url = request.form["map_url"]
+    if form.validate_on_submit():
+        form.populate_obj(group)  # Automatically fills fields back into group
         db.session.commit()
         flash("Group updated successfully!", "success")
         return redirect(url_for("admin_dashboard"))
 
-    return render_template("admin/edit_group.html", group=group)
+    return render_template("admin/edit_group.html", form=form)
+
 
 @app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
 @login_required
@@ -154,17 +153,16 @@ def edit_event(event_id):
         abort(403)
 
     event = Event.query.get_or_404(event_id)
+    form = EventForm(obj=event)
 
-    if request.method == "POST":
-        event.title = request.form["title"]
-        event.description = request.form["description"]
-        event.date_time = request.form["date_time"]
-        event.status = request.form["status"]
+    if form.validate_on_submit():
+        form.populate_obj(event)
         db.session.commit()
         flash("Event updated successfully!", "success")
         return redirect(url_for("admin_dashboard"))
 
-    return render_template("admin/edit_event.html", event=event)
+    return render_template("admin/edit_event.html", form=form)
+
 
 
 
@@ -852,23 +850,6 @@ def admin_dashboard():
 
 
 
-@app.route("/edit-group/<int:group_id>", methods=["GET", "POST"])
-@login_required
-def edit_group(group_id):
-    if not current_user.is_admin:
-        abort(403)
-
-    group = db.get_or_404(Catholic, group_id)
-    form = GroupForm(obj=group)
-
-    if form.validate_on_submit():
-        form.populate_obj(group)
-        db.session.commit()
-        flash("Group updated successfully.", "success")
-        return redirect(url_for("admin_dashboard"))
-
-    return render_template("edit_group.html", form=form, group=group)
-
 @app.route("/delete-group/<int:group_id>", methods=["POST"])
 @login_required
 def delete_group(group_id):
@@ -881,11 +862,7 @@ def delete_group(group_id):
     flash("Group deleted successfully.", "danger")
     return redirect(url_for("admin_dashboard"))
 
-@app.route("/edit-event/<int:event_id>", methods=["GET", "POST"])
-@login_required
-def edit_event(event_id):
-    # Logic to load, validate, and update the event
-    ...
+
 
 @app.route("/delete-event/<int:event_id>", methods=["POST"])
 @login_required

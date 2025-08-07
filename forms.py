@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, SubmitField, PasswordField, SelectField, BooleanField,
-    TextAreaField, DateField, TimeField
+    TextAreaField, DateField, TimeField, URLField, DateTimeLocalField
 )
-from wtforms.validators import DataRequired, Email, Optional, Length
+from wtforms.validators import DataRequired, Email, Optional, Length, URL
 from wtforms_sqlalchemy.fields import QuerySelectField
 
 def get_approved_groups():
@@ -139,4 +139,19 @@ class StartGroup(FlaskForm):
     submit = SubmitField("Submit Your Group Idea")
 
 
-
+# class GroupForm(FlaskForm):
+#     name = StringField("Group Name", validators=[DataRequired()])
+#     city = StringField("City", validators=[DataRequired()])
+#     state = StringField("State", validators=[DataRequired()])
+#     group_details = TextAreaField("Details", validators=[Optional()])
+#     img_url = URLField("Image URL", validators=[Optional(), URL()])
+#     website_address = URLField("Website", validators=[Optional(), URL()])
+#     social_media = URLField("Social Media", validators=[Optional(), URL()])
+#     map_url = URLField("Map URL", validators=[Optional(), URL()])
+#
+#
+# class EventForm(FlaskForm):
+#     title = StringField("Title", validators=[DataRequired()])
+#     description = TextAreaField("Description", validators=[Optional()])
+#     date_time = DateTimeLocalField("Date and Time", format="%Y-%m-%dT%H:%M", validators=[Optional()])
+#     status = SelectField("Status", choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")])

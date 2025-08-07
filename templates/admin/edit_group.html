@@ -1,10 +1,55 @@
-<form method="POST">
-  <input type="text" name="name" value="{{ group.name }}" required>
-  <input type="text" name="city" value="{{ group.city }}">
-  <input type="text" name="state" value="{{ group.state }}">
-  <textarea name="group_details">{{ group.group_details }}</textarea>
-  <input type="url" name="website_address" value="{{ group.website_address }}">
-  <input type="url" name="social_media" value="{{ group.social_media }}">
-  <input type="url" name="map_url" value="{{ group.map_url }}">
-  <button type="submit" class="btn btn-primary">Update Group</button>
-</form>
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+  <h2>Edit Group</h2>
+
+  <form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.city.label(class="form-label") }}
+      {{ form.city(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.state.label(class="form-label") }}
+      {{ form.state(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.group_details.label(class="form-label") }}
+      {{ form.group_details(class="form-control", rows="3") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.img_url.label(class="form-label") }}
+      {{ form.img_url(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.website_address.label(class="form-label") }}
+      {{ form.website_address(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.social_media.label(class="form-label") }}
+      {{ form.social_media(class="form-control") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.map_url.label(class="form-label") }}
+      {{ form.map_url(class="form-control") }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Group</button>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+
+{% endblock %}

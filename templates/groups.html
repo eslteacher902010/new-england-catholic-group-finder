@@ -12,9 +12,8 @@
             <p class="card-text">{{ group.city }}, {{ group.state }}</p>
 
             {% if group.group_details %}
-                <p class="card-text">{{ group.group_details }}</p>
+              <p class="card-text">{{ group.group_details }}</p>
             {% endif %}
-
 
             {% if group.website_address %}
               <a href="{{ group.website_address }}" class="btn btn-outline-secondary" target="_blank">Website</a>
@@ -25,6 +24,10 @@
             {% endif %}
 
             <a href="{{ group.map_url }}" class="btn btn-primary mt-2" target="_blank">Map</a>
+
+            {% if current_user.is_authenticated and current_user.is_admin %}
+              <a href="{{ url_for('edit_group', group_id=group.id) }}" class="btn btn-warning mt-2">Edit</a>
+            {% endif %}
           </div>
         </div>
       </div>

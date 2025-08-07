@@ -2,35 +2,32 @@
 {% block content %}
 
 <div class="container mt-5">
-  <h2 class="mb-4">Edit Event</h2>
+  <h2>Edit Event</h2>
 
   <form method="POST">
+    {{ form.hidden_tag() }}
+
     <div class="mb-3">
-      <label for="title" class="form-label">Event Title</label>
-      <input type="text" class="form-control" id="title" name="title" value="{{ event.title }}" required>
+      {{ form.title.label(class="form-label") }}
+      {{ form.title(class="form-control") }}
     </div>
 
     <div class="mb-3">
-      <label for="description" class="form-label">Description</label>
-      <textarea class="form-control" id="description" name="description" rows="3">{{ event.description }}</textarea>
+      {{ form.description.label(class="form-label") }}
+      {{ form.description(class="form-control", rows="3") }}
     </div>
 
     <div class="mb-3">
-      <label for="date_time" class="form-label">Date and Time</label>
-      <input type="datetime-local" class="form-control" id="date_time" name="date_time"
-             value="{{ event.date_time.strftime('%Y-%m-%dT%H:%M') if event.date_time }}">
+      {{ form.date_time.label(class="form-label") }}
+      {{ form.date_time(class="form-control") }}
     </div>
 
     <div class="mb-3">
-      <label for="status" class="form-label">Status</label>
-      <select class="form-select" id="status" name="status">
-        <option value="pending" {% if event.status == 'pending' %}selected{% endif %}>Pending</option>
-        <option value="approved" {% if event.status == 'approved' %}selected{% endif %}>Approved</option>
-        <option value="rejected" {% if event.status == 'rejected' %}selected{% endif %}>Rejected</option>
-      </select>
+      {{ form.status.label(class="form-label") }}
+      {{ form.status(class="form-select") }}
     </div>
 
-    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <button type="submit" class="btn btn-primary">Update Event</button>
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
 </div>
