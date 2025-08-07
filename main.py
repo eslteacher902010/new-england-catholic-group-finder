@@ -125,6 +125,48 @@ def admin_required(f):
     return decorated
 
 
+@app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
+@login_required
+def edit_group(group_id):
+    if not current_user.is_admin:
+        abort(403)
+
+    group = Catholic.query.get_or_404(group_id)
+
+    if request.method == "POST":
+        group.name = request.form["name"]
+        group.city = request.form["city"]
+        group.state = request.form["state"]
+        group.group_details = request.form["group_details"]
+        group.website_address = request.form["website_address"]
+        group.social_media = request.form["social_media"]
+        group.map_url = request.form["map_url"]
+        db.session.commit()
+        flash("Group updated successfully!", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    return render_template("admin/edit_group.html", group=group)
+
+@app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
+@login_required
+def edit_event(event_id):
+    if not current_user.is_admin:
+        abort(403)
+
+    event = Event.query.get_or_404(event_id)
+
+    if request.method == "POST":
+        event.title = request.form["title"]
+        event.description = request.form["description"]
+        event.date_time = request.form["date_time"]
+        event.status = request.form["status"]
+        db.session.commit()
+        flash("Event updated successfully!", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    return render_template("admin/edit_event.html", event=event)
+
+
 
 @login_manager.user_loader
 def load_user(user_id):

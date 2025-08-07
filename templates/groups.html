@@ -10,7 +10,11 @@
           <div class="card-body">
             <h5 class="card-title">{{ group.name }}</h5>
             <p class="card-text">{{ group.city }}, {{ group.state }}</p>
-            <p class="card-text">{{ group.group_details }}</p>
+
+            {% if group.group_details %}
+                <p class="card-text">{{ group.group_details }}</p>
+            {% endif %}
+
 
             {% if group.website_address %}
               <a href="{{ group.website_address }}" class="btn btn-outline-secondary" target="_blank">Website</a>

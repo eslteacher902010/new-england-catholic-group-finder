@@ -1,0 +1,10 @@
+<form method="POST">
+  <input type="text" name="name" value="{{ group.name }}" required>
+  <input type="text" name="city" value="{{ group.city }}">
+  <input type="text" name="state" value="{{ group.state }}">
+  <textarea name="group_details">{{ group.group_details }}</textarea>
+  <input type="url" name="website_address" value="{{ group.website_address }}">
+  <input type="url" name="social_media" value="{{ group.social_media }}">
+  <input type="url" name="map_url" value="{{ group.map_url }}">
+  <button type="submit" class="btn btn-primary">Update Group</button>
+</form>
