@@ -1,53 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
   <h2>{{ group.name }}</h2>
+
   <p><strong>Location:</strong> {{ group.city }}, {{ group.state }}</p>
   <p><strong>Age Range:</strong> {{ group.approximate_age_range }}</p>
   <p><strong>Group Details:</strong> {{ group.group_details }}</p>
-  <p><strong>Contact:</strong> {{ group.contact }}</p>
-  {% if group.map_url %}
-  <a href="{{ group.map_url }}" target="_blank" class="btn btn-outline-primary me-2">View Map</a>
-{% endif %}
-{% if group.website_address %}
-  <a href="{{ group.website_address }}" target="_blank" class="btn btn-outline-secondary">Visit Website</a>
-{% endif %}
+
+  {% if group.contact %}
+    <p><strong>Contact:</strong> {{ group.contact }}</p>
+  {% endif %}
+
+  {% if group.map_url or group.website_address %}
+    <p>
+      {% if group.map_url %}
+        <a href="{{ group.map_url }}" target="_blank" class="btn btn-outline-primary me-2">View Map</a>
+      {% endif %}
+      {% if group.website_address %}
+        <a href="{{ group.website_address }}" target="_blank" class="btn btn-outline-secondary">Visit Website</a>
+      {% endif %}
+    </p>
+  {% endif %}
 
   {% if group.img_url %}
     <img src="{{ group.img_url }}" class="img-fluid" alt="Group Image">
   {% endif %}
 
-
-
-{% if group.events %}
-  <h3>Upcoming Events:</h3>
-  <ul>
-    {% for event in group.events %}
-     <li>
-  <strong><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></strong>
-  on {{ event.date_time.strftime('%b %d, %Y') }}
-</li>
-
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No events yet.</p>
-{% endif %}
-
-
-
-
-  {% if group.geocode_warning %}
-  <p class="text-warning">{{ group.geocode_warning }}</p>
+  {% if group.events %}
+    <h3>Upcoming Events:</h3>
+    <ul>
+      {% for event in group.events %}
+        <li>
+          <strong><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></strong>
+          on {{ event.date_time.strftime('%b %d, %Y') }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No events yet.</p>
   {% endif %}
 
- <a href="{{ url_for('show_groups') }}" class="btn btn-link mt-3">← Back to all groups</a>
+  {% if group.geocode_warning %}
+    <p class="text-warning">{{ group.geocode_warning }}</p>
+  {% endif %}
 
-{% if current_user.is_authenticated and current_user.is_admin %}
-  <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
-    <button type="submit" class="btn btn-danger">Delete</button>
-  </form>
-{% endif %}
+  <a href="{{ url_for('show_groups') }}" class="btn btn-link mt-3">← Back to all groups</a>
 
-
-
+  {% if current_user.is_authenticated and current_user.is_admin %}
+    <form method="POST" action="{{ url_for('delete_group', group_id=group.id) }}">
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  {% endif %}
 {% endblock %}

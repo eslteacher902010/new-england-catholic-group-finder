@@ -9,6 +9,7 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
@@ -91,6 +92,7 @@ def run_migrations_online():
                 logger.info('No changes in schema detected.')
 
     conf_args = current_app.extensions['migrate'].configure_args
+    conf_args["render_as_batch"] = True
     if conf_args.get("process_revision_directives") is None:
         conf_args["process_revision_directives"] = process_revision_directives
 

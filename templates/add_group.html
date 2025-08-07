@@ -3,7 +3,16 @@
 
 <h2>Add a New Group</h2>
 
-<form method="POST">
+<!-- Show validation errors -->
+{% for field in form %}
+  {% for error in field.errors %}
+    <div class="alert alert-danger">
+      {{ field.label.text }}: {{ error }}
+    </div>
+  {% endfor %}
+{% endfor %}
+
+<form method="POST" action="{{ url_for('submit_group') }}">
   {{ form.hidden_tag() }}
 
   <div class="mb-3">
@@ -22,6 +31,16 @@
   </div>
 
   <div class="mb-3">
+    {{ form.zip_code.label(class="form-label") }}
+    {{ form.zip_code(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
+    {{ form.group_details.label(class="form-label") }}
+    {{ form.group_details(class="form-control") }}
+  </div>
+
+  <div class="mb-3">
     {{ form.website_address.label(class="form-label") }}
     {{ form.website_address(class="form-control") }}
   </div>
@@ -31,26 +50,7 @@
     {{ form.social_media(class="form-control") }}
   </div>
 
-  <div class="mb-3">
-    {{ form.lat.label(class="form-label") }}
-    {{ form.lat(class="form-control") }}
-  </div>
-
-  <div class="mb-3">
-    {{ form.lon.label(class="form-label") }}
-    {{ form.lon(class="form-control") }}
-  </div>
-
-  <div class="mb-3">
-    {{ form.img_url.label(class="form-label") }}
-    {{ form.img_url(class="form-control") }}
-  </div>
-
-  <div class="mb-3">
-    {{ form.map_url.label(class="form-label") }}
-    {{ form.map_url(class="form-control") }}
-  </div>
-
   <button type="submit" class="btn btn-primary">Add Group</button>
 </form>
+
 {% endblock %}

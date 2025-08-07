@@ -1,10 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
 
-<p>Attendees for {{ event.name }}:</p>
+<h3>Attendees for {{ event.title }}:</h3>
+
+{% if event.is_recurring %}
+  <p class="text-muted">
+    📅 <strong>Recurring Event:</strong> {{ event.recurring_week|capitalize }} {{ event.recurring_day }} of the month at {{ event.recurring_time }}.
+    <br>
+    These attendees have signed up for the recurring series.
+  </p>
+{% else %}
+  <p class="text-muted">
+    🗓️ <strong>One-Time Event:</strong> {{ event.date_time.strftime('%A, %B %d, %Y at %I:%M %p') }}.
+  </p>
+{% endif %}
+
 <ul>
   {% for attendee in event.attendees %}
     <li>{{ attendee.email }}</li>
+  {% else %}
+    <li>No attendees yet.</li>
   {% endfor %}
 </ul>
 

@@ -1,78 +1,162 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="container mt-4">
+  <h1 class="text-center">Catholic Groups & Events Calendar</h1>
 
-<h1 class="text-center">Catholic Groups & Events Calendar</h1>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+  <button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#eventModal">
+    ➕ Add Event
+  </button>
 
+  <div id="calendar"></div>
 
-<!-- Trigger Button -->
-<button class="btn btn-primary my-3" data-bs-toggle="modal" data-bs-target="#eventModal">
-  ➕ Add Event
-</button>
+  <!-- Modal -->
+  <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="eventForm" method="POST" class="modal-content">
+        {{ form.hidden_tag() }}
 
-<!-- FullCalendar Container -->
-<div id="calendar"></div>
+        <div class="modal-header">
+          <h5 class="modal-title" id="eventModalLabel">Submit a New Event</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-<!-- Modal -->
-<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form id="eventForm" method="POST" class="modal-content">
-      {{ form.hidden_tag() }}
+        <div class="modal-body">
+          {{ form.title.label }} {{ form.title(class="form-control") }}
+          {{ form.description.label }} {{ form.description(class="form-control") }}
+          {{ form.date.label }} {{ form.date(class="form-control") }}
+          {{ form.time.label }} {{ form.time(class="form-control") }}
+          {{ form.address.label }} {{ form.address(class="form-control") }}
+          {{ form.zip_code.label }} {{ form.zip_code(class="form-control") }}
+          {{ form.link.label }} {{ form.link(class="form-control") }}
 
-      <div class="modal-header">
-        <h5 class="modal-title" id="eventModalLabel">Submit a New Event</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
+          <div class="form-check my-2">
+            {{ form.is_recurring(class="form-check-input", id="isRecurring") }}
+            {{ form.is_recurring.label(class="form-check-label", for="isRecurring") }}
+          </div>
 
-      <div class="modal-body">
-        {{ form.title.label }} {{ form.title(class="form-control") }}
-        {{ form.description.label }} {{ form.description(class="form-control") }}
-        {{ form.date.label }} {{ form.date(class="form-control") }}
-        {{ form.time.label }} {{ form.time(class="form-control") }}
-        {{ form.location.label }} {{ form.location(class="form-control") }}
-        {{ form.link.label }} {{ form.link(class="form-control") }}
-      </div>
+          <div id="recurringFields" style="display: none;">
+            <div class="mb-2">
+              {{ form.recurring_week.label }} {{ form.recurring_week(class="form-select") }}
+            </div>
+            <div class="mb-2">
+              {{ form.recurring_day.label }} {{ form.recurring_day(class="form-select") }}
+            </div>
+            <div class="mb-2">
+              {{ form.recurring_time.label }} {{ form.recurring_time(class="form-control") }}
+            </div>
+          </div>
+        </div>
 
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-success">Submit</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </form>
+        <div class="mb-3 px-3">
+          {{ form.group.label }} {{ form.group(class="form-select", id="groupDropdown") }}
+        </div>
+
+        <div class="mb-3 px-3" id="customGroupWrapper" style="display: none;">
+          {{ form.custom_group.label }} {{ form.custom_group(class="form-control") }}
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Submit</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
-<!-- Script -->
+<!-- Calendar Script -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Fetch and render calendar events
+  const groupDropdown = document.getElementById("groupDropdown");
+  const customGroupWrapper = document.getElementById("customGroupWrapper");
+  const customGroupInput = document.querySelector("input[name='custom_group']");
+  const isRecurringCheckbox = document.getElementById("isRecurring");
+  const recurringFields = document.getElementById("recurringFields");
+
+  // Group dropdown logic
+  if (groupDropdown) {
+    groupDropdown.addEventListener("change", function () {
+      const selected = groupDropdown.options[groupDropdown.selectedIndex].text;
+      customGroupWrapper.style.display = selected === "Other" ? "block" : "none";
+      customGroupInput.disabled = selected !== "Other";
+    });
+  }
+
+  if (customGroupInput) {
+    customGroupInput.addEventListener("input", () => {
+      groupDropdown.disabled = customGroupInput.value.trim() !== "";
+    });
+  }
+
+  // Recurring fields toggle
+  if (isRecurringCheckbox) {
+    const toggleRecurringFields = () => {
+      recurringFields.style.display = isRecurringCheckbox.checked ? "block" : "none";
+    };
+    isRecurringCheckbox.addEventListener("change", toggleRecurringFields);
+    toggleRecurringFields(); // Initialize on page load
+  }
+
+  // Submit form via fetch
+  document.getElementById("eventForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch("{{ url_for('submit_event') }}", {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("✅ Event submitted for approval.");
+        bootstrap.Modal.getInstance(document.getElementById("eventModal")).hide();
+        this.reset();
+        location.reload();
+      } else {
+        alert("❌ There was an error. Please try again.");
+      }
+    })
+    .catch(() => alert("❌ Submission failed. Please try again."));
+  });
+
+  // Fetch events and initialize calendar
   fetch("/data/events.json")
     .then(res => res.json())
     .then(events => {
       const calendarEvents = events.map(event => ({
         title: event.title + (event.city ? ` - ${event.city}` : ""),
-        start: new Date(event.date_time),
-        url: event.link,
-        color: event.title.includes("YCP") ? '#007bff' : '#28a745',
+        start: event.date_time, // ISO string expected
+        url: "/event/" + event.id,
+        color: event.is_recurring ? '#aa00ff' : (event.title.includes("YCP") ? '#007bff' : '#28a745'),
         extendedProps: {
           description: event.description,
-          location: event.location,
-          ics_url: event.ics_url
+          location: event.address || event.location,
+          ics_url: event.ics_url,
+          is_internal: event.is_internal,
+          is_recurring: event.is_recurring,
+          recurring_day: event.recurring_day,
+          recurring_week: event.recurring_week,
+          recurring_time: event.recurring_time
         }
       }));
 
       const calendarEl = document.getElementById("calendar");
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: "dayGridMonth",
+        height: 650,
         headerToolbar: {
           left: "prev,next today",
           center: "title",
@@ -81,32 +165,28 @@ document.addEventListener("DOMContentLoaded", function () {
         events: calendarEvents,
         eventClick: function(info) {
           info.jsEvent.preventDefault();
-          if (info.event.url) {
-            window.open(info.event.url, '_blank');
-          }
+          window.location.href = info.event.url;
         },
         eventDidMount: function(info) {
-          const { description, location, ics_url } = info.event.extendedProps;
+          const { description, location, ics_url, is_internal, is_recurring, recurring_day, recurring_week, recurring_time } = info.event.extendedProps;
 
           const tooltip = document.createElement("div");
           tooltip.classList.add("fc-tooltip");
-          tooltip.innerHTML = `
-            <strong>${info.event.title}</strong><br>
-            ${description ? `<div>${description}</div>` : ""}
-            ${location ? `<div><em>${location}</em></div>` : ""}
-            ${ics_url ? `<a href="${ics_url}" target="_blank">➕ Add to Calendar</a>` : ""}
-          `;
+          let content = `<strong>${info.event.title}</strong><br>`;
+          if (description) content += `<div>${description}</div>`;
+          if (location) content += `<div><em>${location}</em></div>`;
+          if (is_recurring) {
+            content += `<div class="text-muted"><em>🌀 Recurs: ${recurring_week} ${recurring_day} at ${recurring_time}</em></div>`;
+          }
+          if (ics_url) content += `<a href="${ics_url}" target="_blank">➕ Add to Calendar</a>`;
+          if (is_internal) {
+            content += `
+              <form action="/signup_event/${info.event.id}" method="POST">
+                <button type="submit" class="btn btn-sm btn-primary mt-2">✝️ Sign Up</button>
+              </form>`;
+          }
 
-
-            // ✅ Only show signup button if it's an internal event
-            if (is_internal) {
-              content += `
-                <form action="/signup_event/${info.event.id}" method="POST">
-                  <button type="submit" class="btn btn-sm btn-primary mt-2">✝️ Sign Up</button>
-                </form>
-              `;
-            }
-
+          tooltip.innerHTML = content;
           document.body.appendChild(tooltip);
 
           info.el.addEventListener("mouseenter", e => {
@@ -129,30 +209,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       calendar.render();
     });
-
-  // Handle event form submission via AJAX
-  document.getElementById("eventForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-
-    fetch("{{ url_for('submit_event') }}", {
-      method: "POST",
-      body: formData,
-      headers: { "X-Requested-With": "XMLHttpRequest" }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert("✅ Event submitted for approval.");
-        const modal = bootstrap.Modal.getInstance(document.getElementById("eventModal"));
-        modal.hide();
-        this.reset();
-      } else {
-        alert("❌ There was an error. Please try again.");
-      }
-    })
-    .catch(() => alert("❌ Submission failed. Please try again."));
-  });
 });
 </script>
 

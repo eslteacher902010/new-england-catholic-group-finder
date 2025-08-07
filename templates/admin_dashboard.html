@@ -5,7 +5,13 @@
 
   <!-- === Pending Groups === -->
   <hr>
-  <h4>🕵️ Pending Groups ({{ groups|length }})</h4>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4>🕵️ Pending Groups <span class="badge bg-secondary">{{ groups|length }}</span></h4>
+    <a href="{{ url_for('add_group') }}" class="btn btn-success">
+      ➕ Add New Group
+    </a>
+  </div>
+
   <ul class="list-group mb-4">
     {% for group in groups %}
       <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -38,34 +44,58 @@
   </ul>
 
   <!-- === Pending Events === -->
-  <h4>📅 Pending Events ({{ events|length }})</h4>
-  <ul class="list-group">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4>📅 Pending Events <span class="badge bg-secondary">{{ events|length }}</span></h4>
+  </div>
+
+ <table class="table table-hover table-striped">
+  <thead class="table-dark">
+    <tr>
+      <th>Title</th>
+      <th>Group</th>
+      <th>Date & Time</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
     {% for event in events %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ event.title }} — {{ event.date_time.strftime('%b %d, %Y %I:%M %p') }}
-        <div class="d-flex gap-2 flex-wrap">
-          <form method="POST" action="{{ url_for('approve_event', event_id=event.id) }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-sm btn-success">Approve</button>
-          </form>
+    <tr>
+      <td>{{ event.title[:40] }}{% if event.title|length > 40 %}…{% endif %}</td>
+      <td>
+        {% if event.group %}
+          {{ event.group.name }}
+        {% else %}
+          {{ event.custom_group_name or "unspecified" }}
+        {% endif %}
+      </td>
+      <td>{{ event.date_time.strftime('%b %d, %Y %I:%M %p') }}</td>
+      <td class="d-flex gap-2 flex-wrap">
+        <form method="POST" action="{{ url_for('approve_event', event_id=event.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-success">Approve</button>
+        </form>
 
-          <form method="POST" action="{{ url_for('reject_event', event_id=event.id) }}" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="reason" value="Incomplete details">
-            <button class="btn btn-sm btn-danger">Reject</button>
-          </form>
+        <form method="POST" action="{{ url_for('reject_event', event_id=event.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="reason" value="Incomplete details">
+          <button class="btn btn-sm btn-danger">Reject</button>
+        </form>
 
-          <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+        <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
 
-          <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}" class="d-inline" onsubmit="return confirm('Delete this event?');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-sm btn-outline-danger">Delete</button>
-          </form>
-        </div>
-      </li>
+        <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}" onsubmit="return confirm('Delete this event?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
     {% else %}
-      <li class="list-group-item text-muted">No pending events.</li>
+    <tr>
+      <td colspan="4" class="text-muted text-center">No pending events.</td>
+    </tr>
     {% endfor %}
-  </ul>
+  </tbody>
+</table>
+
 </div>
 {% endblock %}

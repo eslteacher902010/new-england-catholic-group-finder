@@ -4,8 +4,18 @@
 <div class="container my-5">
   <h2>{{ event.title }}</h2>
 
-  <p><strong>Date & Time:</strong> {{ event.date_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</p>
-  
+  {% if event.is_recurring %}
+    <p><strong>Recurring:</strong>
+      {% if event.recurring_week.lower() == "every" %}
+        Every {{ event.recurring_day }} at {{ event.recurring_time }}
+      {% else %}
+        {{ event.recurring_week|capitalize }} {{ event.recurring_day }} of the month at {{ event.recurring_time }}
+      {% endif %}
+    </p>
+  {% elif event.date_time %}
+    <p><strong>Date & Time:</strong> {{ event.date_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</p>
+  {% endif %}
+
   {% if event.group %}
     <p><strong>Hosted by:</strong>
       <a href="{{ url_for('group_detail', group_id=event.group.id) }}">
@@ -42,7 +52,6 @@
         <form action="{{ url_for('signup_event', event_id=event.id) }}" method="POST">
           <button type="submit" class="btn btn-success">Sign Up</button>
         </form>
-
       {% endif %}
     {% else %}
       <p><a href="{{ url_for('login') }}">Log in</a> to sign up for this event.</p>

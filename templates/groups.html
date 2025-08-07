@@ -10,13 +10,16 @@
           <div class="card-body">
             <h5 class="card-title">{{ group.name }}</h5>
             <p class="card-text">{{ group.city }}, {{ group.state }}</p>
-            <p class="card-text">{{ group.group_details }}, {{ group.group_details }}</p>
+            <p class="card-text">{{ group.group_details }}</p>
+
             {% if group.website_address %}
               <a href="{{ group.website_address }}" class="btn btn-outline-secondary" target="_blank">Website</a>
             {% endif %}
+
             {% if group.social_media %}
-              <a href="{{ group.social_media }}" class="btn btn-outline-secondary" target="_blank">Website</a>
+              <a href="{{ group.social_media }}" class="btn btn-outline-secondary" target="_blank">Social</a>
             {% endif %}
+
             <a href="{{ group.map_url }}" class="btn btn-primary mt-2" target="_blank">Map</a>
           </div>
         </div>

@@ -33,10 +33,9 @@ class CommentForm(FlaskForm):
     submit = SubmitField("Submit Comment")
 
 
-
-
 class EventForm(FlaskForm):
     title = TextAreaField("Title of Event", validators=[DataRequired()])
+
     description = StringField("Description", validators=[DataRequired()],
                               render_kw={"placeholder": "One to two sentences about what will happen at this event"})
 
@@ -46,23 +45,34 @@ class EventForm(FlaskForm):
     time = TimeField("Time", validators=[DataRequired()],
                      render_kw={"placeholder": "HH:MM", "type": "time"})
 
-    location = StringField("Location", validators=[DataRequired()],
-                           render_kw={"placeholder": "e.g., 123 Main St, Boston, MA"})
+    address = StringField("Address", validators=[DataRequired()],
+                          render_kw={"placeholder": "e.g., 123 Main St"})
+
+    zip_code = StringField("ZIP Code", validators=[Optional(), Length(max=10)],
+                          render_kw={"placeholder": "e.g., 02118"})
 
     link = StringField("Link to event", validators=[Optional()],
                        render_kw={"placeholder": "If possible, a link to the event"})
 
-    group = QuerySelectField(
-        'Group',
-        query_factory=get_approved_groups,
-        get_label="name",
-        allow_blank=True
-    )
+    group = SelectField("Group", choices=[], coerce=int)  # populate choices in your route
 
+    custom_group = StringField("Or Create a New Group", validators=[Optional()],
+                               render_kw={"placeholder": "e.g. Catholic Young Adults of Quincy"})
+
+    is_recurring = BooleanField('Is this a recurring event?')
+    recurring_week = SelectField(
+        'Week of Month',
+        choices=[('', 'Select'), ('first', 'First'), ('second', 'Second'), ('third', 'Third'), ('fourth', 'Fourth'),
+                 ('last', 'Last')]
+    )
+    recurring_day = SelectField(
+        'Day of the Week',
+        choices=[('', 'Select')] + [(day, day) for day in
+                                    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']]
+    )
+    recurring_time = StringField('Recurring Time (e.g., 6:00 PM)')
 
     submit = SubmitField("Submit Event")
-
-
 
 
 class GroupForm(FlaskForm):
