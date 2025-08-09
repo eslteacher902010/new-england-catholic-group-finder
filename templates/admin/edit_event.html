@@ -27,6 +27,11 @@
       {{ form.status(class="form-select") }}
     </div>
 
+    <div class="mb-3">
+      {{ form.link.label(class="form-label") }}
+      {{ form.link(class="form-control") }}
+    </div>
+
     <button type="submit" class="btn btn-primary">Update Event</button>
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
