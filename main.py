@@ -23,7 +23,8 @@ from sqlalchemy import Integer, String, Float, Boolean
 from dateutil.parser import parse as parse_datetime
 from opencage.geocoder import OpenCageGeocode
 from functools import wraps
-
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Integer, String, Boolean, ForeignKey, DateTime
 
 from forms import StartGroup, RegisterForm, LoginForm, EventForm, GroupForm
 
@@ -40,10 +41,26 @@ geocoder = OpenCageGeocode(os.getenv("API_KEY"))
 
 # Initialize Flask
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///catholic_groups.db'
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "dev")
 
+# Use /data on Fly (mounted volume), else local file
+basedir = os.path.abspath(os.path.dirname(__file__))
+data_dir = "/data"
+
+if os.path.isdir(data_dir):
+    os.makedirs(data_dir, exist_ok=True)  # safe no-op if it exists
+    db_path = os.path.join(data_dir, "db.sqlite")
+else:
+    db_path = os.path.join(basedir, "local.db")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # optional tidy
+
+
+
+
 csrf = CSRFProtect(app)
+
 
 # Set up DB base and SQLAlchemy
 class Base(DeclarativeBase): pass
@@ -52,15 +69,17 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
+# Set up login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# table
 signups_table = db.Table(
     "signups",
     db.Column("user_id", db.Integer, db.ForeignKey("user.id"), primary_key=True),
     db.Column("event_id", db.Integer, db.ForeignKey("event.id"), primary_key=True)
 )
 
-# Set up login manager
-login_manager = LoginManager()
-login_manager.init_app(app)
 
 # User model
 class User(db.Model, UserMixin):
@@ -70,6 +89,11 @@ class User(db.Model, UserMixin):
     subscribed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    signed_up_events = db.relationship(
+        "Event",
+        secondary=signups_table,
+        back_populates="attendees"
+    )
 
     followed_groups = db.relationship(
         'Catholic',
@@ -77,13 +101,10 @@ class User(db.Model, UserMixin):
         backref='followers'
     )
 
-    # In User model
-    signed_up_events = db.relationship(
-        "Event",
-        secondary=signups_table,
-        back_populates="attendees"
-    )
 
+@app.get("/healthz")
+def healthz():
+    return "ok", 200
 
 
 
@@ -127,23 +148,32 @@ def admin_required(f):
 
 
 
-
 @app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
 @login_required
 def edit_group(group_id):
+
     if not current_user.is_admin:
         abort(403)
 
     group = Catholic.query.get_or_404(group_id)
-    form = GroupForm(obj=group)  # Pre-fill form with group data
+    form = GroupForm(request.form, obj=group)  # Pre-fill form with group data
+    print("Form valid:", form.validate_on_submit())
+    print("Form errors:", form.errors)
 
     if form.validate_on_submit():
-        form.populate_obj(group)  # Automatically fills fields back into group
+        # Handle special "Other" case for age range
+        if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
+            group.approximate_age_range = form.custom_age_range.data
+        else:
+            group.approximate_age_range = form.approximate_age_range.data
+
+        form.populate_obj(group)  # Populate remaining fields
         db.session.commit()
         flash("Group updated successfully!", "success")
         return redirect(url_for("admin_dashboard"))
 
     return render_template("admin/edit_group.html", form=form)
+
 
 
 @app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
@@ -153,7 +183,7 @@ def edit_event(event_id):
         abort(403)
 
     event = Event.query.get_or_404(event_id)
-    form = EventForm(obj=event)
+    form = EventForm(request.form,obj=event)
 
     if form.validate_on_submit():
         form.populate_obj(event)
@@ -184,6 +214,7 @@ class Catholic(db.Model):
     lat: Mapped[float] = mapped_column(Float, nullable=True)
     lon: Mapped[float] = mapped_column(Float, nullable=True)
     img_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    approximate_age_range: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     map_url: Mapped[str] = mapped_column(String(500), nullable=True)
     user_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"), nullable=True)
     rejection_reason: Mapped[str] = mapped_column(String(500), nullable=True)
@@ -218,29 +249,31 @@ class Catholic(db.Model):
         }
 
 
-# Event model
+
 class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    date_time = db.Column(db.DateTime, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
+    date_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
-    address = db.Column(db.String(250), nullable=True)
-    zip_code = db.Column(db.String(10), nullable=True)
-    status = db.Column(db.String(20), default="pending")
+    address: Mapped[Optional[str]] = mapped_column(String(250))
+    zip_code: Mapped[Optional[str]] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
 
-    is_recurring = db.Column(db.Boolean, default=False)
-    recurring_day = db.Column(db.String(20), nullable=True)
-    recurring_week = db.Column(db.String(20), nullable=True)
-    recurring_time = db.Column(db.String(20), nullable=True)
+    is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
+    recurring_day: Mapped[Optional[str]] = mapped_column(String(20))
+    recurring_week: Mapped[Optional[str]] = mapped_column(String(20))
+    recurring_time: Mapped[Optional[str]] = mapped_column(String(20))
 
-    group_id = db.Column(db.Integer, db.ForeignKey("catholic.id"), nullable=False)
-    group = db.relationship("Catholic", back_populates="events")
+    group_id: Mapped[int] = mapped_column(ForeignKey("catholic.id"), index=True)
+    group: Mapped["Catholic"] = db.relationship("Catholic", back_populates="events")
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), index=True)
 
     attendees = db.relationship(
         "User",
         secondary=signups_table,
-        back_populates="signed_up_events"
+        back_populates="signed_up_events",
     )
 
 
@@ -502,11 +535,27 @@ def sign_up():
 
     return render_template("register.html", form=form)
 
-@app.route("/add_group", methods=["GET"])
+@app.route("/add_group", methods=["GET", "POST"])
 @login_required
 def add_group():
     form = GroupForm()
+
+    if form.validate_on_submit():
+        new_group = Catholic()
+
+        if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
+            new_group.approximate_age_range = form.custom_age_range.data
+        else:
+            new_group.approximate_age_range = form.approximate_age_range.data
+
+        form.populate_obj(new_group)  # Fills all other fields
+        db.session.add(new_group)
+        db.session.commit()
+        flash("Group added successfully!", "success")
+        return redirect(url_for("admin_dashboard"))
+
     return render_template("add_group.html", form=form)
+
 
 
 @app.route("/submit-group", methods=["POST"])
@@ -594,6 +643,11 @@ def start_group():
         state = None
         zip_code = form.zip_code.data or None
 
+        if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
+            age_range = form.custom_age_range.data
+        else:
+            age_range = form.approximate_age_range.data
+
         if geo_result:
             lat = geo_result[0]['geometry']['lat']
             lon = geo_result[0]['geometry']['lng']
@@ -615,7 +669,8 @@ def start_group():
             lat=lat,
             lon=lon,
             user_id=current_user.id,
-            status="pending"
+            status="pending",
+            approximate_age_range=age_range  # ✅ This is what was missing
         )
         db.session.add(new_group)
         db.session.commit()
@@ -678,6 +733,9 @@ def show_groups():
     groups = db.session.execute(
         db.select(Catholic).where(Catholic.status == "approved")
     ).scalars().all()
+    for group in groups:
+        print(group.name, group.map_url)
+
     return render_template("groups.html", groups=groups)
 
 
@@ -911,6 +969,23 @@ def contact():
 
     return render_template("contact.html")
 
+@app.route("/fix-imgs")
+def fix_imgs():
+    if not current_user.is_authenticated or not current_user.is_admin:
+        return "Not authorized", 403
+
+    updates = {
+        "Roman Catholic Diocese of Burlington": "https://your-url.jpg",
+        "St. Leonard's": "https://another-url.jpg",
+    }
+
+    for name, url in updates.items():
+        g = Catholic.query.filter_by(name=name).first()
+        if g:
+            g.img_url = url
+
+    db.session.commit()
+    return "Images updated!"
 
 
 # ---------- RUN ----------
