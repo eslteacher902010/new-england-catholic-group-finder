@@ -265,11 +265,15 @@ class Event(db.Model):
     recurring_week: Mapped[Optional[str]] = mapped_column(String(20))
     recurring_time: Mapped[Optional[str]] = mapped_column(String(20))
 
-    group_id: Mapped[int] = mapped_column(ForeignKey("catholic.id"), index=True)
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("catholic.id", name="fk_event_group_id"), index=True
+    )
     group: Mapped["Catholic"] = db.relationship("Catholic", back_populates="events")
     link = db.Column(db.String(300), nullable=True)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", name="fk_event_user_id"), index=True
+    )
 
     attendees = db.relationship(
         "User",
