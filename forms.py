@@ -81,7 +81,7 @@ class GroupForm(FlaskForm):
     img_url = StringField("Image URL", validators=[Optional()], render_kw={"placeholder": "optional"})
     city = StringField("City", validators=[DataRequired()])
     state = StringField("State", validators=[DataRequired()])
-    most_current_event = StringField("Current Event", validators=[DataRequired()])
+    most_current_event = StringField("Current Event", validators=[Optional()],  render_kw={"placeholder": "optional"})
     website_address = StringField("Website", validators=[Optional()], render_kw={"placeholder": "optional"})
     social_media=StringField("social media", validators=[Optional()], render_kw={"placeholder": "optional"})
 
@@ -92,9 +92,12 @@ class GroupForm(FlaskForm):
         ('20s–30s', '20s–30s'),
         ('30s', '30s'),
         ('30s–40s', '30s–40s'),
-        ('All Ages', 'All Ages')
+        ('All Ages', 'All Ages'),
+        ('Other', 'Other')
+
     ], validators=[DataRequired()])
 
+    custom_age_range = StringField("Please specify", validators=[Optional()])
 
     # New renamed field
     group_details = TextAreaField("Helpful notes for someone visiting this group")
@@ -119,8 +122,13 @@ class StartGroup(FlaskForm):
         ('20s–30s', '20s–30s'),
         ('30s', '30s'),
         ('30s–40s', '30s–40s'),
-        ('All Ages', 'All Ages')
-    ], validators=[DataRequired()])
+        ('All Ages', 'All Ages'),
+        ('Other', 'Other'),
+
+        ], validators = [DataRequired()])
+
+    custom_age_range = StringField("Please specify", )
+
 
     group_type = SelectField("Group Type", choices=[
         ('', '-- Select Type --'),

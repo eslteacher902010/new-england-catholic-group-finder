@@ -269,3 +269,9 @@ h1 { color: #4CAF50; }
   margin: 10px;
   color: #155724;
 
+img.card-img-top {
+  max-height: 200px !important;
+  object-fit: cover !important;
+}
+
+

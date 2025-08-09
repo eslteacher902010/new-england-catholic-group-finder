@@ -25,8 +25,8 @@
   {{ form.city.label }}<br>
   {{ form.city(class="form-control") }}<br>
 
-  {{ form.State.label }}<br>
-  {{ form.State(class="form-control") }}<br>
+  {{ form.state.label }}<br>
+  {{ form.state(class="form-control") }}<br>
 
 
 
@@ -40,8 +40,13 @@
   {{ form.approximate_age_range.label }}<br>
   {{ form.approximate_age_range(class="form-select") }}<br>
 
+  <div class="form-group" id="custom-age-group" style="display: none;">
+  {{ form.custom_age_range.label }}
+  {{ form.custom_age_range(class="form-control") }}
+</div>
+
   <!-- Group Type -->
-  {{ form.group_type.label }}<br>
+  {{ form.group_type.label(class="form-label")}}<br>
   {{ form.group_type(class="form-select") }}<br>
 
   <!-- The Vision -->
@@ -64,5 +69,27 @@
   <br>
   {{ form.submit(class="btn btn-primary") }}
 </form>
+
+
+
+<script>
+  const ageDropdown = document.getElementById("age-dropdown");
+  const customAgeGroup = document.getElementById("custom-age-group");
+
+  ageDropdown.addEventListener("change", function () {
+    customAgeGroup.style.display = this.value === "Other" ? "block" : "none";
+  });
+
+  if (ageDropdown.value === "Other") {
+    customAgeGroup.style.display = "block";
+  }
+
+  if (ageDropdown.value !== "Other") {
+  customAgeGroup.style.display = "none";
+  document.querySelector('[name="custom_age_range"]').value = "";
+}
+
+</script>
+
 
 {% endblock %}

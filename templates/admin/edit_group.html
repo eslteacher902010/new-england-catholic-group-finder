@@ -32,6 +32,16 @@
       {{ form.img_url(class="form-control") }}
     </div>
 
+    <div class="form-group">
+  {{ form.approximate_age_range.label }}
+  {{ form.approximate_age_range(class="form-control", id="age-dropdown") }}
+</div>
+
+    <div class="form-group" id="custom-age-group" style="display: none;">
+  {{ form.custom_age_range.label }}
+  {{ form.custom_age_range(class="form-control") }}
+</div>
+
     <div class="mb-3">
       {{ form.website_address.label(class="form-label") }}
       {{ form.website_address(class="form-control") }}
@@ -47,9 +57,36 @@
       {{ form.map_url(class="form-control") }}
     </div>
 
+   <div class="mb-3">
+  {{ form.most_current_event.label(class="form-label") }}
+  {{ form.most_current_event(class="form-control") }}
+  {% for error in form.most_current_event.errors %}
+    <div class="text-danger">{{ error }}</div>
+
+  {% endfor %}
+
+</div>
+
+
     <button type="submit" class="btn btn-primary">Update Group</button>
     <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
 </div>
+
+<script>
+  const ageDropdown = document.getElementById("age-dropdown");
+  const customAgeGroup = document.getElementById("custom-age-group");
+
+  // Show/hide the custom age field on change
+  ageDropdown.addEventListener("change", function () {
+    customAgeGroup.style.display = this.value === "Other" ? "block" : "none";
+  });
+
+  // ✅ Run once on load in case "Other" is pre-selected
+  if (ageDropdown.value === "Other") {
+    customAgeGroup.style.display = "block";
+  }
+</script>
+
 
 {% endblock %}
