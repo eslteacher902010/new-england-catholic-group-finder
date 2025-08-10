@@ -1,16 +1,23 @@
+# ── Standard library
 import os
 import csv
 import calendar
-from datetime import datetime, timedelta
-from typing import Optional
-from flask import current_app
+from functools import wraps
+from datetime import datetime, timedelta, time
+from typing import Optional, List
 
+# ── Third-party
+from dotenv import load_dotenv
+from dateutil.parser import parse as parse_datetime
+from opencage.geocoder import OpenCageGeocode
 
-
+# ── Flask core
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, jsonify, Response, abort, make_response
+    flash, jsonify, Response, abort, make_response, current_app
 )
+
+# ── Flask extensions
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import (
@@ -18,22 +25,16 @@ from flask_login import (
     login_required, current_user, UserMixin
 )
 from flask_wtf.csrf import CSRFProtect
-from dotenv import load_dotenv
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Float, Boolean
-from dateutil.parser import parse as parse_datetime
-from opencage.geocoder import OpenCageGeocode
-from functools import wraps
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, String, Boolean, ForeignKey, DateTime
 
+# ── SQLAlchemy (types for query building or ad-hoc models in this file)
+from sqlalchemy import Integer, String, Boolean, Float, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+
+# ── App-local
 from forms import StartGroup, RegisterForm, LoginForm, EventForm, GroupForm
-from datetime import datetime, time
 
-# models.py
-from typing import Optional as TOptional
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 
 
@@ -85,30 +86,54 @@ login_manager.init_app(app)
 # table
 signups_table = db.Table(
     "signups",
-    db.Column("user_id", db.Integer, db.ForeignKey("user.id"), primary_key=True),
-    db.Column("event_id", db.Integer, db.ForeignKey("event.id"), primary_key=True)
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("event_id", db.Integer, db.ForeignKey("event.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
-# User model
-class User(db.Model, UserMixin):
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String(150), nullable=False)
-    subscribed: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+# Association table: must be defined before models that reference it
+followers = db.Table(
+    "followers",
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("group_id", db.Integer, db.ForeignKey("catholic.id", ondelete="CASCADE"), primary_key=True),
+)
 
-    signed_up_events = db.relationship(
+
+class User(db.Model, UserMixin):
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(150), unique=True, nullable=False, index=True)
+    password: Mapped[str] = mapped_column(String(150), nullable=False)
+    subscribed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Events this user created (pairs with Event.creator)
+    events_created: Mapped[List["Event"]] = relationship(
+        "Event",
+        back_populates="creator"
+        # choose cascade if you want deleting a user to delete their events:
+        # cascade="all, delete-orphan"
+    )
+
+    # Events this user signed up for (many-to-many via signups_table)
+    signed_up_events: Mapped[List["Event"]] = relationship(
         "Event",
         secondary=signups_table,
-        back_populates="attendees"
+        back_populates="attendees",
     )
 
-    followed_groups = db.relationship(
-        'Catholic',
-        secondary='followers',
-        backref='followers'
+    # Groups this user follows (many-to-many via followers table)
+    followed_groups: Mapped[List["Catholic"]] = relationship(
+        "Catholic",
+        secondary="followers",   # you can also reference the table object if imported: secondary=followers
+        backref="followers"
+        # if you prefer explicit symmetry:
+        # back_populates="followers"  # and define followers on Catholic with back_populates
     )
+
+    def __repr__(self) -> str:
+        return f"<User id={self.id} email={self.email}>"
 
 
 @app.get("/healthz")
@@ -156,6 +181,14 @@ def admin_required(f):
     return decorated
 
 
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    try:
+        cur = dbapi_connection.cursor()
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+    except Exception:
+        pass
 
 
 @login_manager.user_loader
@@ -163,34 +196,37 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-
-# Catholic Group model
 class Catholic(db.Model):
+    __tablename__ = "catholic"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    city: Mapped[str] = mapped_column(String(250), nullable=True)
-    state: Mapped[str] = mapped_column(String(250), nullable=True)
-    group_details: Mapped[str] = mapped_column(String(500), nullable=True)
-    website_address: Mapped[str] = mapped_column(String(250), nullable=True)
-    social_media: Mapped[str] = mapped_column(String(250), nullable=True)
-    lat: Mapped[float] = mapped_column(Float, nullable=True)
-    lon: Mapped[float] = mapped_column(Float, nullable=True)
-    img_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    state: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    group_details: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    website_address: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    social_media: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+    lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    lon: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    img_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     approximate_age_range: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    map_url: Mapped[str] = mapped_column(String(500), nullable=True)
-    user_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"), nullable=True)
-    rejection_reason: Mapped[str] = mapped_column(String(500), nullable=True)
-    zip_code: Mapped[Optional[str]] = mapped_column(db.String(10), nullable=False)
+    map_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, db.ForeignKey("user.id"), nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    zip_code: Mapped[str] = mapped_column(String(10), nullable=False)
     subscribed: Mapped[bool] = mapped_column(Boolean, default=False)
-    events = db.relationship("Event", back_populates="group", cascade="all, delete")
-
-
-    # ✅ Store the approval status in the DB
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
 
-    user = db.relationship("User", backref="groups")
+    # Keep events if group is deleted: DB will SET NULL on event.group_id
+    events: Mapped[List["Event"]] = relationship(
+        back_populates="group",
+        passive_deletes=True   # let the DB apply ON DELETE without loading children
+        # no "cascade" here; we are NOT deleting events automatically
+    )
 
-    def to_dict(self):
+    user = relationship("User", backref="groups")
+
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
@@ -204,56 +240,61 @@ class Catholic(db.Model):
             "img_url": self.img_url,
             "map_url": self.map_url,
             "status": self.status,
-            "zip_code":self.zip_code,
-            "subscribed": self.subscribed
-
-
+            "zip_code": self.zip_code,
+            "subscribed": self.subscribed,
         }
 
 
-
+# -----------------------------
+# Event model
+# -----------------------------
 class Event(db.Model):
+    __tablename__ = "event"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(120))
     description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
-    date_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    date_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
 
     address: Mapped[Optional[str]] = mapped_column(String(250))
     zip_code: Mapped[Optional[str]] = mapped_column(String(10))
-    status: Mapped[str] = mapped_column(String(20), default="pending")
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
 
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
     recurring_day: Mapped[Optional[str]] = mapped_column(String(20))
     recurring_week: Mapped[Optional[str]] = mapped_column(String(20))
     recurring_time: Mapped[Optional[str]] = mapped_column(String(20))
-    link: Mapped[TOptional[str]] = mapped_column(String(255), nullable=True)
 
+    link: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
 
-    group_id: Mapped[int] = mapped_column(
-        ForeignKey("catholic.id", name="fk_event_group_id"), index=True
+    # Group (nullable so we can SET NULL on delete)
+    group_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("catholic.id", name="fk_event_group_id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
     )
-    group: Mapped["Catholic"] = db.relationship("Catholic", back_populates="events")
-    link = db.Column(db.String(300), nullable=True)
+    group: Mapped["Catholic"] = relationship(back_populates="events")
 
+    # Creator (require a user; tweak nullable if needed)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("user.id", name="fk_event_user_id"), index=True
+        ForeignKey("user.id", name="fk_event_user_id"), index=True, nullable=False
     )
+    creator: Mapped["User"] = relationship(back_populates="events_created")
 
-    attendees = db.relationship(
+    attendees = relationship(
         "User",
-        secondary=signups_table,
+        secondary=signups_table,          # make sure this table is defined elsewhere
         back_populates="signed_up_events",
     )
 
-
-
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        from flask import url_for
         return {
             "id": self.id,
             "title": self.title,
             "description": self.description,
             "date_time": self.date_time.isoformat() if self.date_time else None,
-            "address": self.address,  # now this won't crash
+            "address": self.address,
             "zip_code": self.zip_code,
             "status": self.status,
             "city": self.group.city if self.group else None,
@@ -263,14 +304,10 @@ class Event(db.Model):
             "recurring_day": self.recurring_day,
             "recurring_week": self.recurring_week,
             "recurring_time": self.recurring_time,
-            "link": self.link
+            "link": self.link,
         }
 
 
-followers = db.Table('followers',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('group_id', db.Integer, db.ForeignKey('catholic.id'))
-)
 
 
 
@@ -349,41 +386,34 @@ def edit_group(group_id):
 
 
 
-@app.route("/admin/edit/event/<int:event_id>", methods=["GET","POST"])
+@app.route("/event/<int:event_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_event(event_id):
-    if not current_user.is_admin:
+    event = Event.query.get_or_404(event_id)
+
+    # allow admins or the event creator
+    if not (getattr(current_user, "is_admin", False) or event.user_id == current_user.id):
         abort(403)
 
-    event = Event.query.get_or_404(event_id)
     form = EventForm(obj=event)
 
-    # ✅ populate choices on EVERY request, before validate_on_submit
-    approved = Catholic.query.filter_by(status="approved").order_by(Catholic.name).all()
-    form.group.choices = [(g.id, g.name) for g in approved]
-
-    # ✅ prefill date + time on initial GET (so the form shows existing values)
-    if not form.is_submitted() and event.date_time:
-        form.date.data = event.date_time.date()
-        form.time.data = event.date_time.time().replace(microsecond=0)
-        form.group.data = event.group_id  # preselect current group
+    # Only if your form has a group_id SelectField(coerce=int)
+    if hasattr(form, "group_id"):
+        form.group_id.choices = [
+            (g.id, g.name) for g in Catholic.query.order_by(Catholic.name).all()
+        ]
+        if request.method == "GET":
+            form.group_id.data = event.group_id
 
     if form.validate_on_submit():
-        # copies fields that share names: title, description, address, etc.
         form.populate_obj(event)
-
-        # ✅ map fields with different names
-        event.group_id = form.group.data
-        if form.date.data and form.time.data:
-            event.date_time = datetime.combine(form.date.data, form.time.data)
-        else:
-            event.date_time = None
-
+        if hasattr(form, "group_id"):
+            event.group_id = form.group_id.data
         db.session.commit()
-        flash("Event updated successfully!", "success")
-        return redirect(url_for("admin_dashboard"))
+        flash("Event updated.", "success")
+        return redirect(url_for("event_detail", event_id=event.id))
 
-    return render_template("admin/edit_event.html", form=form, event=event)
+    return render_template("edit_event.html", form=form, event=event)
 
 
 

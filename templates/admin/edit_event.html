@@ -33,6 +33,12 @@
       {{ form.status(class="form-select") }}
     </div>
 
+      <div class="mb-3">
+  <label class="form-label">{{ form.group_id.label }}</label>
+  {{ form.group_id(class="form-select") }}
+</div>
+
+
     <div class="mb-3">
       {{ form.link.label(class="form-label") }}
       {{ form.link(class="form-control") }}
