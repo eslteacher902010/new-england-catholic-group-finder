@@ -18,9 +18,15 @@
     </div>
 
     <div class="mb-3">
-      {{ form.date_time.label(class="form-label") }}
-      {{ form.date_time(class="form-control") }}
+       {{ form.date.label(class="form-label") }}
+{{ form.date(class="form-control") }}
     </div>
+
+   <div class="mb-3">
+       {{ form.time.label(class="form-label mt-2") }}
+{{ form.time(class="form-control") }}
+    </div>
+
 
     <div class="mb-3">
       {{ form.status.label(class="form-label") }}

@@ -1,14 +1,17 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, SubmitField, PasswordField, SelectField, BooleanField,
-    TextAreaField, DateField, TimeField, URLField, DateTimeLocalField
+    TextAreaField, DateField, TimeField, URLField, DateTimeLocalField, FloatField
 )
-from wtforms.validators import DataRequired, Email, Optional, Length, URL
-from wtforms_sqlalchemy.fields import QuerySelectField
+from wtforms.validators import DataRequired, Email, Optional, Length, URL, NumberRange
+
+
 
 def get_approved_groups():
     from main import Catholic  # lazy import to avoid circular issue
     return Catholic.query.filter_by(status="approved").all()
+
+
 
 
 
@@ -54,7 +57,7 @@ class EventForm(FlaskForm):
     link = StringField("Link to event", validators=[Optional()],
                        render_kw={"placeholder": "If possible, a link to the event"})
 
-    group = SelectField("Group", choices=[], coerce=int)  # populate choices in your route
+    group = SelectField("Group", coerce=int, validators=[Optional()]) # populate choices in your route
 
     custom_group = StringField("Or Create a New Group", validators=[Optional()],
                                render_kw={"placeholder": "e.g. Catholic Young Adults of Quincy"})
@@ -71,6 +74,12 @@ class EventForm(FlaskForm):
                                     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']]
     )
     recurring_time = StringField('Recurring Time (e.g., 6:00 PM)')
+
+    status = SelectField("Status", choices=[("pending", "Pending"),
+                                            ("approved", "Approved"),
+                                            ("rejected", "Rejected")])
+
+
 
     submit = SubmitField("Submit Event")
 
@@ -99,8 +108,8 @@ class GroupForm(FlaskForm):
 
     custom_age_range = StringField("Please specify", validators=[Optional()])
 
-    lat = StringField("Latitude", validators=[Optional()], render_kw={"placeholder": "don't worry if you don't know."})
-    lon = StringField("Longitude", validators=[Optional()], render_kw={"placeholder": "don't worry if you don't know."})
+    lat = FloatField("Latitude", validators=[Optional(), NumberRange(-90, 90)])
+    lon = FloatField("Longitude", validators=[Optional(), NumberRange(-180, 180)])
 
     # New renamed field
     group_details = TextAreaField("Helpful notes for someone visiting this group")

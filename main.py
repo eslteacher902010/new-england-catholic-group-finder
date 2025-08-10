@@ -3,6 +3,7 @@ import csv
 import calendar
 from datetime import datetime, timedelta
 from typing import Optional
+from flask import current_app
 
 
 
@@ -28,6 +29,12 @@ from sqlalchemy import Integer, String, Boolean, ForeignKey, DateTime
 
 from forms import StartGroup, RegisterForm, LoginForm, EventForm, GroupForm
 from datetime import datetime, time
+
+# models.py
+from typing import Optional as TOptional
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
 
 
 
@@ -219,6 +226,8 @@ class Event(db.Model):
     recurring_day: Mapped[Optional[str]] = mapped_column(String(20))
     recurring_week: Mapped[Optional[str]] = mapped_column(String(20))
     recurring_time: Mapped[Optional[str]] = mapped_column(String(20))
+    link: Mapped[TOptional[str]] = mapped_column(String(255), nullable=True)
+
 
     group_id: Mapped[int] = mapped_column(
         ForeignKey("catholic.id", name="fk_event_group_id"), index=True
@@ -311,47 +320,72 @@ def groups_json():
 @app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
 @login_required
 def edit_group(group_id):
-
     if not current_user.is_admin:
         abort(403)
 
     group = Catholic.query.get_or_404(group_id)
-    form = GroupForm(request.form, obj=group)  # Pre-fill form with group data
-    print("Form valid:", form.validate_on_submit())
-    print("Form errors:", form.errors)
+    form = GroupForm(obj=group)  # prefill on GET
 
     if form.validate_on_submit():
-        # Handle special "Other" case for age range
+        # Handle "Other" before populating, then prevent overwrite
         if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
             group.approximate_age_range = form.custom_age_range.data
         else:
             group.approximate_age_range = form.approximate_age_range.data
 
-        form.populate_obj(group)  # Populate remaining fields
+        # Copy remaining fields
+        form.populate_obj(group)
+
         db.session.commit()
         flash("Group updated successfully!", "success")
         return redirect(url_for("admin_dashboard"))
+    elif request.method == "POST":
+        # Helpful debug when validation fails
+        current_app.logger.warning("Edit group validation failed: %s", form.errors)
 
-    return render_template("admin/edit_group.html", form=form)
+    # 🔑 Pass group to the template
+    return render_template("admin/edit_group.html", form=form, group=group)
 
 
 
-@app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
+
+@app.route("/admin/edit/event/<int:event_id>", methods=["GET","POST"])
 @login_required
 def edit_event(event_id):
     if not current_user.is_admin:
         abort(403)
 
     event = Event.query.get_or_404(event_id)
-    form = EventForm(request.form,obj=event)
+    form = EventForm(obj=event)
+
+    # ✅ populate choices on EVERY request, before validate_on_submit
+    approved = Catholic.query.filter_by(status="approved").order_by(Catholic.name).all()
+    form.group.choices = [(g.id, g.name) for g in approved]
+
+    # ✅ prefill date + time on initial GET (so the form shows existing values)
+    if not form.is_submitted() and event.date_time:
+        form.date.data = event.date_time.date()
+        form.time.data = event.date_time.time().replace(microsecond=0)
+        form.group.data = event.group_id  # preselect current group
 
     if form.validate_on_submit():
+        # copies fields that share names: title, description, address, etc.
         form.populate_obj(event)
+
+        # ✅ map fields with different names
+        event.group_id = form.group.data
+        if form.date.data and form.time.data:
+            event.date_time = datetime.combine(form.date.data, form.time.data)
+        else:
+            event.date_time = None
+
         db.session.commit()
         flash("Event updated successfully!", "success")
         return redirect(url_for("admin_dashboard"))
 
-    return render_template("admin/edit_event.html", form=form)
+    return render_template("admin/edit_event.html", form=form, event=event)
+
+
 
 
 
