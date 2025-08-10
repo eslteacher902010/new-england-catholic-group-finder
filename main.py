@@ -27,6 +27,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer, String, Boolean, ForeignKey, DateTime
 
 from forms import StartGroup, RegisterForm, LoginForm, EventForm, GroupForm
+from datetime import datetime, time
+
 
 
 NEW_ENGLAND_STATES = {"MA", "ME", "NH", "VT", "RI", "CT"}
@@ -145,53 +147,6 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated
-
-
-
-@app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
-@login_required
-def edit_group(group_id):
-
-    if not current_user.is_admin:
-        abort(403)
-
-    group = Catholic.query.get_or_404(group_id)
-    form = GroupForm(request.form, obj=group)  # Pre-fill form with group data
-    print("Form valid:", form.validate_on_submit())
-    print("Form errors:", form.errors)
-
-    if form.validate_on_submit():
-        # Handle special "Other" case for age range
-        if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
-            group.approximate_age_range = form.custom_age_range.data
-        else:
-            group.approximate_age_range = form.approximate_age_range.data
-
-        form.populate_obj(group)  # Populate remaining fields
-        db.session.commit()
-        flash("Group updated successfully!", "success")
-        return redirect(url_for("admin_dashboard"))
-
-    return render_template("admin/edit_group.html", form=form)
-
-
-
-@app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
-@login_required
-def edit_event(event_id):
-    if not current_user.is_admin:
-        abort(403)
-
-    event = Event.query.get_or_404(event_id)
-    form = EventForm(request.form,obj=event)
-
-    if form.validate_on_submit():
-        form.populate_obj(event)
-        db.session.commit()
-        flash("Event updated successfully!", "success")
-        return redirect(url_for("admin_dashboard"))
-
-    return render_template("admin/edit_event.html", form=form)
 
 
 
@@ -353,11 +308,133 @@ def groups_json():
     ])
 
 
+@app.route("/admin/edit/group/<int:group_id>", methods=["GET", "POST"])
+@login_required
+def edit_group(group_id):
+
+    if not current_user.is_admin:
+        abort(403)
+
+    group = Catholic.query.get_or_404(group_id)
+    form = GroupForm(request.form, obj=group)  # Pre-fill form with group data
+    print("Form valid:", form.validate_on_submit())
+    print("Form errors:", form.errors)
+
+    if form.validate_on_submit():
+        # Handle special "Other" case for age range
+        if form.approximate_age_range.data == "Other" and form.custom_age_range.data:
+            group.approximate_age_range = form.custom_age_range.data
+        else:
+            group.approximate_age_range = form.approximate_age_range.data
+
+        form.populate_obj(group)  # Populate remaining fields
+        db.session.commit()
+        flash("Group updated successfully!", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    return render_template("admin/edit_group.html", form=form)
+
+
+
+@app.route("/admin/edit/event/<int:event_id>", methods=["GET", "POST"])
+@login_required
+def edit_event(event_id):
+    if not current_user.is_admin:
+        abort(403)
+
+    event = Event.query.get_or_404(event_id)
+    form = EventForm(request.form,obj=event)
+
+    if form.validate_on_submit():
+        form.populate_obj(event)
+        db.session.commit()
+        flash("Event updated successfully!", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    return render_template("admin/edit_event.html", form=form)
+
+
+
 @login_manager.unauthorized_handler
 def unauthorized():
     flash("Please log in first.", "warning")
     return redirect(url_for("login"))
 
+
+def generate_future_recurrences(event_id, months_ahead=6):
+    event = Event.query.get(event_id)
+    if not event:
+        print(f"No event found with ID {event_id}")
+        return
+
+    if not event.is_recurring or not event.recurring_week or not event.recurring_day:
+        print("Event is not set as recurring. Aborting.")
+        return
+
+    week_map = {
+        "first": 0,
+        "second": 1,
+        "third": 2,
+        "fourth": 3,
+        "last": -1
+    }
+    day_map = {
+        "Monday": 0,
+        "Tuesday": 1,
+        "Wednesday": 2,
+        "Thursday": 3,
+        "Friday": 4,
+        "Saturday": 5,
+        "Sunday": 6
+    }
+
+    if event.recurring_week not in week_map or event.recurring_day not in day_map:
+        print("Invalid recurring_week or recurring_day")
+        return
+
+    for i in range(1, months_ahead + 1):
+        month = (event.date_time.month + i - 1) % 12 + 1
+        year = event.date_time.year + ((event.date_time.month + i - 1) // 12)
+
+        cal = calendar.Calendar(firstweekday=calendar.SUNDAY)
+        days = [d for d in cal.itermonthdates(year, month)
+                if d.weekday() == day_map[event.recurring_day] and d.month == month]
+
+        try:
+            recur_date = days[week_map[event.recurring_week]]
+        except IndexError:
+            print(f"No {event.recurring_week} {event.recurring_day} in {month}/{year}")
+            continue
+
+        new_event = Event(
+            title=event.title,
+            description=event.description,
+            date_time=datetime.combine(recur_date, event.date_time.time() if event.date_time else time(19, 0)),
+            address=event.address,
+            zip_code=event.zip_code,
+            status=event.status,
+            is_recurring=event.is_recurring,
+            recurring_week=event.recurring_week,
+            recurring_day=event.recurring_day,
+            group_id=event.group_id,
+            user_id=event.user_id,
+            link=event.link
+        )
+        db.session.add(new_event)
+
+    db.session.commit()
+    print(f"Generated {months_ahead} months of recurrences for {event.title}")
+
+
+# --- Route that uses the helper ---
+@app.route("/admin/generate_recurrences/<int:event_id>")
+@login_required
+def generate_future_recurrences_route(event_id):
+    if not current_user.is_admin:
+        abort(403)
+    generate_future_recurrences(event_id)
+    flash("Recurrences generated!", "success")
+    return redirect(url_for("admin_dashboard"))
 
 @app.route("/submit-event", methods=["POST"])
 @login_required
@@ -554,13 +631,16 @@ def add_group():
         else:
             new_group.approximate_age_range = form.approximate_age_range.data
 
+        # Set status directly on the new group
+        new_group.status = "approved" if current_user.is_admin else "pending"
+
         form.populate_obj(new_group)  # Fills all other fields
         db.session.add(new_group)
         db.session.commit()
         flash("Group added successfully!", "success")
         return redirect(url_for("admin_dashboard"))
-
     return render_template("add_group.html", form=form)
+
 
 
 
@@ -714,7 +794,7 @@ def approve_group(group_id):
     group.status = "approved"
     db.session.commit()
     flash(f"✅ Approved group: {group.name}", "success")
-    return redirect(url_for("map_view"))
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/admin/reject/<int:group_id>", methods=["POST"])
@@ -912,6 +992,37 @@ def admin_dashboard():
 
     return render_template("admin_dashboard.html", groups=pending_groups, events=sorted_events)
 
+@app.route("/admin/approve_all_groups", methods=["POST"])
+@login_required
+def approve_all_groups():
+    if not current_user.is_admin:
+        abort(403)
+
+    # Approve all pending groups
+    pending_groups = Catholic.query.filter_by(status="pending").all()
+    for group in pending_groups:
+        group.status = "approved"
+
+
+    db.session.commit()
+    flash(f"Approved {len(pending_groups)} groups.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+@app.route("/admin/approve_all_events", methods=["POST"])
+@login_required
+def approve_all_events():
+    if not current_user.is_admin:
+        abort(403)
+
+
+    # Approve all pending events
+    pending_events = Event.query.filter_by(status="pending").all()
+    for event in pending_events:
+        event.status = "approved"
+
+    db.session.commit()
+    flash(f"Approved {len(pending_events)} events.", "success")
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/delete-group/<int:group_id>", methods=["POST"])
@@ -925,6 +1036,28 @@ def delete_group(group_id):
     db.session.commit()
     flash("Group deleted successfully.", "danger")
     return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/update_coords/<int:group_id>", methods=["POST"])
+@login_required
+def update_coords(group_id):
+    if not current_user.is_admin:
+        abort(403)
+
+    group = Catholic.query.get_or_404(group_id)
+
+    lat = request.form.get("lat")
+    lng = request.form.get("lng")
+
+    if lat and lng:
+        group.lat = float(lat)
+        group.lng = float(lng)
+        db.session.commit()
+        flash("Coordinates updated!", "success")
+    else:
+        flash("Latitude and longitude required.", "danger")
+
+    return redirect(url_for("edit_group", group_id=group.id))
 
 
 

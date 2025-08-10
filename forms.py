@@ -99,6 +99,9 @@ class GroupForm(FlaskForm):
 
     custom_age_range = StringField("Please specify", validators=[Optional()])
 
+    lat = StringField("Latitude", validators=[Optional()], render_kw={"placeholder": "don't worry if you don't know."})
+    lon = StringField("Longitude", validators=[Optional()], render_kw={"placeholder": "don't worry if you don't know."})
+
     # New renamed field
     group_details = TextAreaField("Helpful notes for someone visiting this group")
 

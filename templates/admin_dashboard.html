@@ -7,9 +7,18 @@
   <hr>
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h4>🕵️ Pending Groups <span class="badge bg-secondary">{{ groups|length }}</span></h4>
-    <a href="{{ url_for('add_group') }}" class="btn btn-success">
-      ➕ Add New Group
-    </a>
+    <div>
+      <a href="{{ url_for('add_group') }}" class="btn btn-success">➕ Add New Group</a>
+      {% if groups %}
+      <form action="{{ url_for('approve_all_groups') }}" method="POST" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-success"
+                onclick="return confirm('Approve all pending groups?');">
+          Approve All
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <ul class="list-group mb-4">
@@ -43,9 +52,19 @@
     {% endfor %}
   </ul>
 
+
   <!-- === Pending Events === -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h4>📅 Pending Events <span class="badge bg-secondary">{{ events|length }}</span></h4>
+    {% if events %}
+    <form action="{{ url_for('approve_all_events') }}" method="POST" class="d-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-success"
+              onclick="return confirm('Approve all pending events?');">
+        Approve All
+      </button>
+    </form>
+    {% endif %}
   </div>
 
  <table class="table table-hover table-striped">
@@ -96,6 +115,5 @@
     {% endfor %}
   </tbody>
 </table>
-
 </div>
 {% endblock %}
